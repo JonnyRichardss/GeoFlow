@@ -25,88 +25,37 @@ TArray<UEdGraphPin*> UGFN_E_PrimitiveSphere::CreateInputPins(UEdGraphPin* fromPi
 }
 UGFN_R_Base* UGFN_E_PrimitiveSphere::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UGeoFlowRuntimePin*>& idToPinMap)
 {
-	UGFN_R_PrimitiveSphere* runtimeNode = NewObject<UGFN_R_PrimitiveSphere>(runtimeGraph);
-	runtimeNode->Position = FVector2D(NodePosX, NodePosY);
-
+	UGFN_R_PrimitiveSphere* runtimeNode = InitRuntimeNode<UGFN_R_PrimitiveSphere>(runtimeGraph);
 	//CentreInput
-	UGeoFlowRuntimePin* CentreRuntimePin = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	CentreRuntimePin->PinName = CentreInput->PinName;
-	CentreRuntimePin->PinId = CentreInput->PinId;
-	if (CentreInput->HasAnyConnections()) {
-		std::pair<FGuid, FGuid> connection = std::make_pair(CentreInput->PinId, CentreInput->LinkedTo[0]->PinId);
-		connections.Add(connection);
-	}
-	else {
-		//only updating default value when we have no connection *should* mean that it persists underneath
-		//not entirely sure if this is true
-		runtimeNode->centre = GetVectorDefaultValue(CentreInput);
-	}
-	idToPinMap.Add(CentreInput->PinId, CentreRuntimePin);
+	UGeoFlowRuntimePin* CentreRuntimePin = InitRuntimePin(runtimeNode, CentreInput, connections, idToPinMap, EGeoFlowReturnType::Vector);
+	runtimeNode->centre = GetVectorDefaultValue(CentreInput);
 	runtimeNode->CentreInput = CentreRuntimePin;
-	CentreRuntimePin->OwningNode = runtimeNode;
-
 	//RadiusInput
-	UGeoFlowRuntimePin* RadiusRuntimePin = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	RadiusRuntimePin->PinName = RadiusInput->PinName;
-	RadiusRuntimePin->PinId = RadiusInput->PinId;
-	if (RadiusInput->HasAnyConnections()) {
-		std::pair<FGuid, FGuid> connection = std::make_pair(RadiusInput->PinId, RadiusInput->LinkedTo[0]->PinId);
-		connections.Add(connection);
-	}
-	else {
-		runtimeNode->radius = GetDoubleDefaultValue(RadiusInput);
-	}
-	idToPinMap.Add(RadiusInput->PinId, RadiusRuntimePin);
+	UGeoFlowRuntimePin* RadiusRuntimePin = InitRuntimePin(runtimeNode, RadiusInput, connections, idToPinMap, EGeoFlowReturnType::Double); 
+	runtimeNode->radius = GetDoubleDefaultValue(RadiusInput);
 	runtimeNode->RadiusInput = RadiusRuntimePin;
-	RadiusRuntimePin->OwningNode = runtimeNode;
-
 	//Output
-	UGeoFlowRuntimePin* OutputRuntimePin = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	OutputRuntimePin->PinName = Output->PinName;
-	OutputRuntimePin->PinId = Output->PinId;
-		//connections check only on inputs
-	idToPinMap.Add(Output->PinId, OutputRuntimePin);
+	UGeoFlowRuntimePin* OutputRuntimePin = InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Double);
 	runtimeNode->Output = OutputRuntimePin;
-	OutputRuntimePin->OwningNode = runtimeNode;
 
 	return runtimeNode;
 }
 
 UGFN_E_Base* UGFN_R_PrimitiveSphere::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UEdGraphPin*>& idToPinMap)
 {
-	UGFN_E_PrimitiveSphere* newNode = NewObject<UGFN_E_PrimitiveSphere>(_workingGraph);
-	newNode->CreateNewGuid();
-	newNode->NodePosX = Position.X;
-	newNode->NodePosY = Position.Y;
-
+	UGFN_E_PrimitiveSphere* newNode = InitUiNode<UGFN_E_PrimitiveSphere>(_workingGraph);
 	//centreinput
-	UEdGraphPin* CentreUiPin = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Input, CentreInput->PinName, EGeoFlowReturnType::Vector);
+	UEdGraphPin* CentreUiPin = InitUiPin(newNode, CentreInput, connections, idToPinMap);
 	newNode->CentreInput = CentreUiPin;
-	CentreUiPin->PinId = CentreInput->PinId;
-	if (CentreInput->Connection != nullptr) {
-		connections.Add(std::make_pair(CentreInput->PinId, CentreInput->Connection->PinId));
-	}
 	SetVectorDefaultValue(CentreUiPin, centre);
-	idToPinMap.Add(CentreInput->PinId, CentreUiPin);
-
 	//radiusinput
-	UEdGraphPin* RadiusUiPin = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Input, RadiusInput->PinName, EGeoFlowReturnType::Double);
+	UEdGraphPin* RadiusUiPin = InitUiPin(newNode, RadiusInput, connections, idToPinMap);
 	newNode->RadiusInput = RadiusUiPin;
-	RadiusUiPin->PinId = RadiusInput->PinId;
-	if (RadiusInput->Connection != nullptr) {
-		connections.Add(std::make_pair(RadiusInput->PinId, RadiusInput->Connection->PinId));
-	}
 	SetDoubleDefaultValue(RadiusUiPin, radius);
-	idToPinMap.Add(RadiusInput->PinId, RadiusUiPin);
-
 	//output
-	UEdGraphPin* OutputUiPin = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Output, Output->PinName, EGeoFlowReturnType::Double);
+	UEdGraphPin* OutputUiPin = InitUiPin(newNode, Output, connections, idToPinMap);
 	newNode->Output = OutputUiPin;
-	OutputUiPin->PinId = Output->PinId;
-	if (Output->Connection != nullptr) {
-		connections.Add(std::make_pair(Output->PinId, Output->Connection->PinId));
-	}
-	idToPinMap.Add(Output->PinId, OutputUiPin);
+
 	return newNode;
 }
 
@@ -147,88 +96,37 @@ TArray<UEdGraphPin*> UGFN_E_PrimitiveBox::CreateInputPins(UEdGraphPin* fromPin)
 }
 UGFN_R_Base* UGFN_E_PrimitiveBox::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UGeoFlowRuntimePin*>& idToPinMap)
 {
-	UGFN_R_PrimitiveBox* runtimeNode = NewObject<UGFN_R_PrimitiveBox>(runtimeGraph);
-	runtimeNode->Position = FVector2D(NodePosX, NodePosY);
-
+	UGFN_R_PrimitiveBox* runtimeNode = InitRuntimeNode<UGFN_R_PrimitiveBox>(runtimeGraph);
 	//CentreInput
-	UGeoFlowRuntimePin* CentreRuntimePin = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	CentreRuntimePin->PinName = CentreInput->PinName;
-	CentreRuntimePin->PinId = CentreInput->PinId;
-	if (CentreInput->HasAnyConnections()) {
-		std::pair<FGuid, FGuid> connection = std::make_pair(CentreInput->PinId, CentreInput->LinkedTo[0]->PinId);
-		connections.Add(connection);
-	}
-	else {
-		//only updating default value when we have no connection *should* mean that it persists underneath
-		//not entirely sure if this is true
-		runtimeNode->centre = GetVectorDefaultValue(CentreInput);
-	}
-	idToPinMap.Add(CentreInput->PinId, CentreRuntimePin);
+	UGeoFlowRuntimePin* CentreRuntimePin = InitRuntimePin(runtimeNode, CentreInput, connections, idToPinMap, EGeoFlowReturnType::Vector);
+	runtimeNode->centre = GetVectorDefaultValue(CentreInput);
 	runtimeNode->CentreInput = CentreRuntimePin;
-	CentreRuntimePin->OwningNode = runtimeNode;
-
 	//RadiusInput
-	UGeoFlowRuntimePin* RadiusRuntimePin = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	RadiusRuntimePin->PinName = RadiusInput->PinName;
-	RadiusRuntimePin->PinId = RadiusInput->PinId;
-	if (RadiusInput->HasAnyConnections()) {
-		std::pair<FGuid, FGuid> connection = std::make_pair(RadiusInput->PinId, RadiusInput->LinkedTo[0]->PinId);
-		connections.Add(connection);
-	}
-	else {
-		runtimeNode->radius = GetVectorDefaultValue(RadiusInput);
-	}
-	idToPinMap.Add(RadiusInput->PinId, RadiusRuntimePin);
+	UGeoFlowRuntimePin* RadiusRuntimePin = InitRuntimePin(runtimeNode, RadiusInput, connections, idToPinMap, EGeoFlowReturnType::Vector);
+	runtimeNode->radius = GetVectorDefaultValue(RadiusInput);
 	runtimeNode->RadiusInput = RadiusRuntimePin;
-	RadiusRuntimePin->OwningNode = runtimeNode;
-
 	//Output
-	UGeoFlowRuntimePin* OutputRuntimePin = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	OutputRuntimePin->PinName = Output->PinName;
-	OutputRuntimePin->PinId = Output->PinId;
-	//connections check only on inputs
-	idToPinMap.Add(Output->PinId, OutputRuntimePin);
+	UGeoFlowRuntimePin* OutputRuntimePin = InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Double);
 	runtimeNode->Output = OutputRuntimePin;
-	OutputRuntimePin->OwningNode = runtimeNode;
 
 	return runtimeNode;
 }
 
 UGFN_E_Base* UGFN_R_PrimitiveBox::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UEdGraphPin*>& idToPinMap)
 {
-	UGFN_E_PrimitiveBox* newNode = NewObject<UGFN_E_PrimitiveBox>(_workingGraph);
-	newNode->CreateNewGuid();
-	newNode->NodePosX = Position.X;
-	newNode->NodePosY = Position.Y;
-
+	UGFN_E_PrimitiveBox* newNode = InitUiNode<UGFN_E_PrimitiveBox>(_workingGraph);
 	//centreinput
-	UEdGraphPin* CentreUiPin = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Input, CentreInput->PinName, EGeoFlowReturnType::Vector);
+	UEdGraphPin* CentreUiPin = InitUiPin(newNode, CentreInput, connections, idToPinMap);
 	newNode->CentreInput = CentreUiPin;
-	CentreUiPin->PinId = CentreInput->PinId;
-	if (CentreInput->Connection != nullptr) {
-		connections.Add(std::make_pair(CentreInput->PinId, CentreInput->Connection->PinId));
-	}
 	SetVectorDefaultValue(CentreUiPin, centre);
-	idToPinMap.Add(CentreInput->PinId, CentreUiPin);
-
 	//radiusinput
-	UEdGraphPin* RadiusUiPin = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Input, RadiusInput->PinName, EGeoFlowReturnType::Double);
+	UEdGraphPin* RadiusUiPin = InitUiPin(newNode, RadiusInput, connections, idToPinMap);
 	newNode->RadiusInput = RadiusUiPin;
-	RadiusUiPin->PinId = RadiusInput->PinId;
-	if (RadiusInput->Connection != nullptr) {
-		connections.Add(std::make_pair(RadiusInput->PinId, RadiusInput->Connection->PinId));
-	}
 	SetVectorDefaultValue(RadiusUiPin, radius);
-	idToPinMap.Add(RadiusInput->PinId, RadiusUiPin);
-
 	//output
-	UEdGraphPin* OutputUiPin = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Output, Output->PinName, EGeoFlowReturnType::Double);
+	UEdGraphPin* OutputUiPin = InitUiPin(newNode, Output, connections, idToPinMap);
 	newNode->Output = OutputUiPin;
-	OutputUiPin->PinId = Output->PinId;
-	if (Output->Connection != nullptr) {
-		connections.Add(std::make_pair(Output->PinId, Output->Connection->PinId));
-	}
-	idToPinMap.Add(Output->PinId, OutputUiPin);
+	
 	return newNode;
 }
 
@@ -249,7 +147,6 @@ double UGFN_R_PrimitiveBox::Evaluate(const FVector3d& pos)
 	
 
 	return CompWiseMax(q, FVector3d(0.0)).Length() + FMath::Min(FMath::Max(q.X, FMath::Max(q.Y, q.Z)), 0.0);
-
 }
 
 
@@ -257,96 +154,44 @@ double UGFN_R_PrimitiveBox::Evaluate(const FVector3d& pos)
 TArray<UEdGraphPin*> UGFN_E_PrimitivePlane::CreateInputPins(UEdGraphPin* fromPin)
 {
 	TArray<UEdGraphPin*> InputPins;
-	CentreInput = CreateCustomPin(EGPD_Input, "Normal Axis", EGeoFlowReturnType::Vector);
-	RadiusInput = CreateCustomPin(EGPD_Input, "Offset", EGeoFlowReturnType::Double);
-	InputPins.Add(CentreInput);
-	InputPins.Add(RadiusInput);
+	NormalInput = CreateCustomPin(EGPD_Input, "Normal Axis", EGeoFlowReturnType::Vector);
+	OffsetInput = CreateCustomPin(EGPD_Input, "Offset", EGeoFlowReturnType::Double);
+	InputPins.Add(NormalInput);
+	InputPins.Add(OffsetInput);
 	return InputPins;
 }
 UGFN_R_Base* UGFN_E_PrimitivePlane::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UGeoFlowRuntimePin*>& idToPinMap)
 {
-	UGFN_R_PrimitivePlane* runtimeNode = NewObject<UGFN_R_PrimitivePlane>(runtimeGraph);
-	runtimeNode->Position = FVector2D(NodePosX, NodePosY);
-
-	//CentreInput
-	UGeoFlowRuntimePin* CentreRuntimePin = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	CentreRuntimePin->PinName = CentreInput->PinName;
-	CentreRuntimePin->PinId = CentreInput->PinId;
-	if (CentreInput->HasAnyConnections()) {
-		std::pair<FGuid, FGuid> connection = std::make_pair(CentreInput->PinId, CentreInput->LinkedTo[0]->PinId);
-		connections.Add(connection);
-	}
-	else {
-		//only updating default value when we have no connection *should* mean that it persists underneath
-		//not entirely sure if this is true
-		runtimeNode->centre = GetVectorDefaultValue(CentreInput);
-	}
-	idToPinMap.Add(CentreInput->PinId, CentreRuntimePin);
-	runtimeNode->CentreInput = CentreRuntimePin;
-	CentreRuntimePin->OwningNode = runtimeNode;
-
+	UGFN_R_PrimitivePlane* runtimeNode = InitRuntimeNode<UGFN_R_PrimitivePlane>(runtimeGraph);
+	//NormalInput
+	UGeoFlowRuntimePin* CentreRuntimePin = InitRuntimePin(runtimeNode, NormalInput, connections, idToPinMap, EGeoFlowReturnType::Vector);
+	runtimeNode->normal = GetVectorDefaultValue(NormalInput);
+	runtimeNode->NormalInput = CentreRuntimePin;
 	//RadiusInput
-	UGeoFlowRuntimePin* RadiusRuntimePin = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	RadiusRuntimePin->PinName = RadiusInput->PinName;
-	RadiusRuntimePin->PinId = RadiusInput->PinId;
-	if (RadiusInput->HasAnyConnections()) {
-		std::pair<FGuid, FGuid> connection = std::make_pair(RadiusInput->PinId, RadiusInput->LinkedTo[0]->PinId);
-		connections.Add(connection);
-	}
-	else {
-		runtimeNode->radius = GetDoubleDefaultValue(RadiusInput);
-	}
-	idToPinMap.Add(RadiusInput->PinId, RadiusRuntimePin);
-	runtimeNode->RadiusInput = RadiusRuntimePin;
-	RadiusRuntimePin->OwningNode = runtimeNode;
-
+	UGeoFlowRuntimePin* RadiusRuntimePin = InitRuntimePin(runtimeNode, OffsetInput, connections, idToPinMap, EGeoFlowReturnType::Double);
+	runtimeNode->offset = GetDoubleDefaultValue(OffsetInput);
+	runtimeNode->OffsetInput = RadiusRuntimePin;
 	//Output
-	UGeoFlowRuntimePin* OutputRuntimePin = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	OutputRuntimePin->PinName = Output->PinName;
-	OutputRuntimePin->PinId = Output->PinId;
-	//connections check only on inputs
-	idToPinMap.Add(Output->PinId, OutputRuntimePin);
+	UGeoFlowRuntimePin* OutputRuntimePin = InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Double);
 	runtimeNode->Output = OutputRuntimePin;
-	OutputRuntimePin->OwningNode = runtimeNode;
 
 	return runtimeNode;
 }
 
 UGFN_E_Base* UGFN_R_PrimitivePlane::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UEdGraphPin*>& idToPinMap)
 {
-	UGFN_E_PrimitivePlane* newNode = NewObject<UGFN_E_PrimitivePlane>(_workingGraph);
-	newNode->CreateNewGuid();
-	newNode->NodePosX = Position.X;
-	newNode->NodePosY = Position.Y;
-
+	auto newNode = InitUiNode<UGFN_E_PrimitivePlane>(_workingGraph);
 	//centreinput
-	UEdGraphPin* CentreUiPin = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Input, CentreInput->PinName, EGeoFlowReturnType::Vector);
-	newNode->CentreInput = CentreUiPin;
-	CentreUiPin->PinId = CentreInput->PinId;
-	if (CentreInput->Connection != nullptr) {
-		connections.Add(std::make_pair(CentreInput->PinId, CentreInput->Connection->PinId));
-	}
-	SetVectorDefaultValue(CentreUiPin, centre);
-	idToPinMap.Add(CentreInput->PinId, CentreUiPin);
-
+	UEdGraphPin* CentreUiPin = InitUiPin(newNode, NormalInput, connections, idToPinMap);
+	newNode->NormalInput = CentreUiPin;
+	SetVectorDefaultValue(CentreUiPin, normal);
 	//radiusinput
-	UEdGraphPin* RadiusUiPin = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Input, RadiusInput->PinName, EGeoFlowReturnType::Double);
-	newNode->RadiusInput = RadiusUiPin;
-	RadiusUiPin->PinId = RadiusInput->PinId;
-	if (RadiusInput->Connection != nullptr) {
-		connections.Add(std::make_pair(RadiusInput->PinId, RadiusInput->Connection->PinId));
-	}
-	SetDoubleDefaultValue(RadiusUiPin, radius);
-	idToPinMap.Add(RadiusInput->PinId, RadiusUiPin);
-
+	UEdGraphPin* RadiusUiPin = InitUiPin(newNode, OffsetInput, connections, idToPinMap);
+	newNode->OffsetInput = RadiusUiPin;
+	SetDoubleDefaultValue(RadiusUiPin, offset);
 	//output
-	UEdGraphPin* OutputUiPin = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Output, Output->PinName, EGeoFlowReturnType::Double);
+	UEdGraphPin* OutputUiPin = InitUiPin(newNode, Output, connections, idToPinMap);
 	newNode->Output = OutputUiPin;
-	OutputUiPin->PinId = Output->PinId;
-	if (Output->Connection != nullptr) {
-		connections.Add(std::make_pair(Output->PinId, Output->Connection->PinId));
-	}
-	idToPinMap.Add(Output->PinId, OutputUiPin);
 	return newNode;
 }
 
@@ -357,24 +202,19 @@ double UGFN_R_PrimitivePlane::Evaluate(const FVector3d& pos)
 	//just catch it all the way up before the first Evaluate() call
 
 
-	if (CentreInput->Connection != nullptr) {
-		UGFN_R_BaseVector* node = Cast<UGFN_R_BaseVector>(CentreInput->Connection->OwningNode);
-		centre = node->Evaluate(pos);
+	if (NormalInput->Connection != nullptr) {
+		UGFN_R_BaseVector* node = Cast<UGFN_R_BaseVector>(NormalInput->Connection->OwningNode);
+		normal = node->Evaluate(pos);
 	}
-	if (RadiusInput->Connection != nullptr) {
-		UGFN_R_BaseDouble* node = Cast<UGFN_R_BaseDouble>(RadiusInput->Connection->OwningNode);
-		radius = node->Evaluate(pos);
+	if (OffsetInput->Connection != nullptr) {
+		UGFN_R_BaseDouble* node = Cast<UGFN_R_BaseDouble>(OffsetInput->Connection->OwningNode);
+		offset = node->Evaluate(pos);
 	}
 
-	FVector3d transformedPos = pos - centre;
-	FVector3d normal = centre;
 	normal.Normalize();
-	return FVector3d::DotProduct(transformedPos,normal) + radius;
+	return FVector3d::DotProduct(pos,normal) + offset;
 
 }
-
-
-
 
 
 TArray<UEdGraphPin*> UGFN_E_PrimitiveEllipsoid::CreateInputPins(UEdGraphPin* fromPin)
@@ -388,88 +228,38 @@ TArray<UEdGraphPin*> UGFN_E_PrimitiveEllipsoid::CreateInputPins(UEdGraphPin* fro
 }
 UGFN_R_Base* UGFN_E_PrimitiveEllipsoid::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UGeoFlowRuntimePin*>& idToPinMap)
 {
-	UGFN_R_PrimitiveEllipsoid* runtimeNode = NewObject<UGFN_R_PrimitiveEllipsoid>(runtimeGraph);
-	runtimeNode->Position = FVector2D(NodePosX, NodePosY);
-
+	UGFN_R_PrimitiveEllipsoid* runtimeNode = InitRuntimeNode<UGFN_R_PrimitiveEllipsoid>(runtimeGraph);
 	//CentreInput
-	UGeoFlowRuntimePin* CentreRuntimePin = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	CentreRuntimePin->PinName = CentreInput->PinName;
-	CentreRuntimePin->PinId = CentreInput->PinId;
-	if (CentreInput->HasAnyConnections()) {
-		std::pair<FGuid, FGuid> connection = std::make_pair(CentreInput->PinId, CentreInput->LinkedTo[0]->PinId);
-		connections.Add(connection);
-	}
-	else {
-		//only updating default value when we have no connection *should* mean that it persists underneath
-		//not entirely sure if this is true
-		runtimeNode->centre = GetVectorDefaultValue(CentreInput);
-	}
-	idToPinMap.Add(CentreInput->PinId, CentreRuntimePin);
+	UGeoFlowRuntimePin* CentreRuntimePin = InitRuntimePin(runtimeNode, CentreInput, connections, idToPinMap, EGeoFlowReturnType::Vector);
+	runtimeNode->centre = GetVectorDefaultValue(CentreInput);
 	runtimeNode->CentreInput = CentreRuntimePin;
-	CentreRuntimePin->OwningNode = runtimeNode;
-
 	//RadiusInput
-	UGeoFlowRuntimePin* RadiusRuntimePin = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	RadiusRuntimePin->PinName = RadiusInput->PinName;
-	RadiusRuntimePin->PinId = RadiusInput->PinId;
-	if (RadiusInput->HasAnyConnections()) {
-		std::pair<FGuid, FGuid> connection = std::make_pair(RadiusInput->PinId, RadiusInput->LinkedTo[0]->PinId);
-		connections.Add(connection);
-	}
-	else {
-		runtimeNode->radius = GetVectorDefaultValue(RadiusInput);
-	}
-	idToPinMap.Add(RadiusInput->PinId, RadiusRuntimePin);
+	UGeoFlowRuntimePin* RadiusRuntimePin = InitRuntimePin(runtimeNode, RadiusInput, connections, idToPinMap, EGeoFlowReturnType::Vector);
+	runtimeNode->radius = GetVectorDefaultValue(RadiusInput);
 	runtimeNode->RadiusInput = RadiusRuntimePin;
-	RadiusRuntimePin->OwningNode = runtimeNode;
-
 	//Output
-	UGeoFlowRuntimePin* OutputRuntimePin = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	OutputRuntimePin->PinName = Output->PinName;
-	OutputRuntimePin->PinId = Output->PinId;
-	//connections check only on inputs
-	idToPinMap.Add(Output->PinId, OutputRuntimePin);
+	UGeoFlowRuntimePin* OutputRuntimePin = InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Double);
 	runtimeNode->Output = OutputRuntimePin;
-	OutputRuntimePin->OwningNode = runtimeNode;
 
 	return runtimeNode;
 }
 
 UGFN_E_Base* UGFN_R_PrimitiveEllipsoid::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UEdGraphPin*>& idToPinMap)
 {
-	UGFN_E_PrimitiveEllipsoid* newNode = NewObject<UGFN_E_PrimitiveEllipsoid>(_workingGraph);
-	newNode->CreateNewGuid();
-	newNode->NodePosX = Position.X;
-	newNode->NodePosY = Position.Y;
-
+	UGFN_E_PrimitiveEllipsoid* newNode = InitUiNode<UGFN_E_PrimitiveEllipsoid>(_workingGraph);
 	//centreinput
-	UEdGraphPin* CentreUiPin = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Input, CentreInput->PinName, EGeoFlowReturnType::Vector);
+	UEdGraphPin* CentreUiPin = InitUiPin(newNode, CentreInput, connections, idToPinMap);
 	newNode->CentreInput = CentreUiPin;
-	CentreUiPin->PinId = CentreInput->PinId;
-	if (CentreInput->Connection != nullptr) {
-		connections.Add(std::make_pair(CentreInput->PinId, CentreInput->Connection->PinId));
-	}
 	SetVectorDefaultValue(CentreUiPin, centre);
-	idToPinMap.Add(CentreInput->PinId, CentreUiPin);
-
 	//radiusinput
-	UEdGraphPin* RadiusUiPin = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Input, RadiusInput->PinName, EGeoFlowReturnType::Double);
+	UEdGraphPin* RadiusUiPin = InitUiPin(newNode, RadiusInput, connections, idToPinMap);
+	
 	newNode->RadiusInput = RadiusUiPin;
-	RadiusUiPin->PinId = RadiusInput->PinId;
-	if (RadiusInput->Connection != nullptr) {
-		connections.Add(std::make_pair(RadiusInput->PinId, RadiusInput->Connection->PinId));
-	}
 	SetVectorDefaultValue(RadiusUiPin, radius);
-	idToPinMap.Add(RadiusInput->PinId, RadiusUiPin);
-
 	//output
-	UEdGraphPin* OutputUiPin = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Output, Output->PinName, EGeoFlowReturnType::Double);
+	UEdGraphPin* OutputUiPin = InitUiPin(newNode, Output, connections, idToPinMap);
 	newNode->Output = OutputUiPin;
-	OutputUiPin->PinId = Output->PinId;
-	if (Output->Connection != nullptr) {
-		connections.Add(std::make_pair(Output->PinId, Output->Connection->PinId));
-	}
-	idToPinMap.Add(Output->PinId, OutputUiPin);
+
 	return newNode;
 }
 

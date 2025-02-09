@@ -46,9 +46,11 @@ public:
 
 	virtual void GetNodeContextMenuActions(class UToolMenu* menu, class UGraphNodeContextMenuContext* context)const override;
 
-
+	UGeoFlowRuntimePin* InitRuntimePin(UGFN_R_Base* runtimeNode, UEdGraphPin* UiPin, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UGeoFlowRuntimePin*>& idToPinMap, EGeoFlowReturnType returnType = EGeoFlowReturnType::None);
 
 	UEdGraphPin* CreateCustomPin(EEdGraphPinDirection direction, FName name, EGeoFlowReturnType ConnectionType);
+	template<typename T>
+	T* InitRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph);
 
 	UEdGraphPin* Output = nullptr;
 };
@@ -129,6 +131,10 @@ public:
 	virtual EGeoFlowNodeType NodeType() const { return EGeoFlowNodeType::Base; }
 
 	virtual UGFN_E_Base* CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UEdGraphPin*>& idToPinMap) { return nullptr; /*only saveable nodes override this*/ }
+	UEdGraphPin* InitUiPin(UGFN_E_Base* newNode, UGeoFlowRuntimePin* runtimePin, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UEdGraphPin*>& idToPinMap);
+	template<typename T>
+	T* InitUiNode(UEdGraph* _workingGraph);
+	
 	UPROPERTY()
 	UGeoFlowRuntimePin* Output = nullptr;
 };
@@ -177,3 +183,21 @@ public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::BaseVector; }
 	virtual FVector3d Evaluate(const FVector3d& pos) { return FVector3d::ZeroVector; }
 };
+
+template<typename T>
+inline T* UGFN_R_Base::InitUiNode(UEdGraph* _workingGraph)
+{
+	T* newNode = NewObject<T>(_workingGraph);
+	newNode->CreateNewGuid();
+	newNode->NodePosX = Position.X;
+	newNode->NodePosY = Position.Y;
+	return newNode;
+}
+
+template<typename T>
+inline T* UGFN_E_Base::InitRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph)
+{
+	T* runtimeNode = NewObject<T>(runtimeGraph);
+	runtimeNode->Position = FVector2D(NodePosX, NodePosY);
+	return runtimeNode;
+}

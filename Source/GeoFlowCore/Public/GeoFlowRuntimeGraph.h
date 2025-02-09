@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "UObject/NameTypes.h"
+#include "GeoFlowNodeEnum.h"
 #include "GeoFlowRuntimeGraph.generated.h"
 class UGFN_R_Base;
 UCLASS()
@@ -22,5 +23,9 @@ public:
 	UGeoFlowRuntimePin* Connection = nullptr;
 	UPROPERTY()
 	UGFN_R_Base* OwningNode = nullptr;
+	UPROPERTY()
+	TEnumAsByte<enum EEdGraphPinDirection> Direction;
+	UPROPERTY()
+	EGeoFlowReturnType ReturnType;
 
 };

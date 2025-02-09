@@ -19,6 +19,7 @@ void UGeoFlowAsset::Generate(UGeoFlowComponent* parent)
 	}
 	FDynamicMesh3* EditMesh = parent->GetMesh();
 
+	if (!IsValid(Graph)) return;
 
 	for (UGFN_R_Base* node : Graph->Nodes) {
 		if (node->NodeType() == EGeoFlowNodeType::Output) {

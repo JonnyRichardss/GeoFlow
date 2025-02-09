@@ -87,8 +87,8 @@ public:
 
 
 	//since i got lazy copying these have the wrong names -- should be normal vector and offset
-	UEdGraphPin* CentreInput = nullptr;
-	UEdGraphPin* RadiusInput = nullptr;
+	UEdGraphPin* NormalInput = nullptr;
+	UEdGraphPin* OffsetInput = nullptr;
 };
 UCLASS()
 class GEOFLOWCORE_API UGFN_R_PrimitivePlane : public UGFN_R_BaseDouble {
@@ -99,13 +99,13 @@ public:
 	virtual UGFN_E_Base* CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UEdGraphPin*>& idToPinMap) override;
 
 	UPROPERTY()
-	UGeoFlowRuntimePin* CentreInput = nullptr;
+	UGeoFlowRuntimePin* NormalInput = nullptr;
 	UPROPERTY()
-	UGeoFlowRuntimePin* RadiusInput = nullptr;
+	UGeoFlowRuntimePin* OffsetInput = nullptr;
 	UPROPERTY()
-	FVector3d centre;
+	FVector3d normal;
 	UPROPERTY()
-	double radius;
+	double offset;
 
 	virtual double Evaluate(const FVector3d& pos) override;
 };

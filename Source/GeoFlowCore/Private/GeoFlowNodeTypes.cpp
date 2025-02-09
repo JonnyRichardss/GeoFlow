@@ -23,6 +23,21 @@ void UGFN_E_Base::GetNodeContextMenuActions(UToolMenu* menu, UGraphNodeContextMe
 		);
 	}
 }
+UGeoFlowRuntimePin* UGFN_E_Base::InitRuntimePin(UGFN_R_Base* runtimeNode, UEdGraphPin* UiPin, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UGeoFlowRuntimePin*>& idToPinMap, EGeoFlowReturnType returnType)
+{
+	UGeoFlowRuntimePin* runtimePin = NewObject<UGeoFlowRuntimePin>(runtimeNode);
+	runtimePin->Direction = UiPin->Direction;
+	runtimePin->ReturnType = returnType;
+	runtimePin->PinName = UiPin->PinName;
+	runtimePin->PinId = UiPin->PinId;
+	if (UiPin->HasAnyConnections() && UiPin->Direction == EEdGraphPinDirection::EGPD_Input) {
+		std::pair<FGuid, FGuid> connection = std::make_pair(UiPin->PinId, UiPin->LinkedTo[0]->PinId);
+		connections.Add(connection);
+	}
+	idToPinMap.Add(UiPin->PinId, runtimePin);
+	runtimePin->OwningNode = runtimeNode;
+	return runtimePin;
+}
 UEdGraphPin* UGFN_E_Base::CreateCustomPin(EEdGraphPinDirection direction, FName name, EGeoFlowReturnType ConnectionType)
 {
 	FName category = (direction == EEdGraphPinDirection::EGPD_Input) ? TEXT("Inputs") : TEXT("Outputs");
@@ -81,45 +96,21 @@ void UGFN_E_Output::GetNodeContextMenuActions(UToolMenu* menu, UGraphNodeContext
 
 UGFN_R_Base* UGFN_E_Output::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UGeoFlowRuntimePin*>& idToPinMap)
 {
-	UGFN_R_Output* runtimeNode = NewObject<UGFN_R_Output>(runtimeGraph);
-	runtimeNode->Position = FVector2D(NodePosX, NodePosY);
-
+	UGFN_R_Output* runtimeNode = InitRuntimeNode<UGFN_R_Output>(runtimeGraph);
 	for (UEdGraphPin* uiPin : Pins) {
-		UGeoFlowRuntimePin* runtimePin = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-		runtimePin->PinName = uiPin->PinName;
-		runtimePin->PinId = uiPin->PinId;
-
-		// Only record the the input side of the connection since this is a directed graph
-		//assuming one connection
-		if (uiPin->HasAnyConnections() && uiPin->Direction == EEdGraphPinDirection::EGPD_Input) {
-			std::pair<FGuid, FGuid> connection = std::make_pair(uiPin->PinId, uiPin->LinkedTo[0]->PinId);
-			connections.Add(connection);
-		}
-
-		idToPinMap.Add(uiPin->PinId, runtimePin);
+		UGeoFlowRuntimePin* runtimePin = InitRuntimePin(runtimeNode,uiPin,connections,idToPinMap,EGeoFlowReturnType::Double);
 		if (uiPin->Direction == EEdGraphPinDirection::EGPD_Input) {
 			runtimeNode->InputPins.Add(runtimePin);
 		}
-		runtimePin->OwningNode = runtimeNode;
 	}
 	return runtimeNode;
 }
 UGFN_E_Base* UGFN_R_Output::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UEdGraphPin*>& idToPinMap)
 {
-	UGFN_E_Output* newNode = NewObject<UGFN_E_Output>(_workingGraph);
-	newNode->CreateNewGuid();
-	newNode->NodePosX = Position.X;
-	newNode->NodePosY = Position.Y;
-
+	UGFN_E_Output* newNode = InitUiNode<UGFN_E_Output>(_workingGraph);
 	for (UGeoFlowRuntimePin* runtimePin : InputPins) {
-		UEdGraphPin* uiPin = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Input, runtimePin->PinName, EGeoFlowReturnType::Double);
-		uiPin->PinId = runtimePin->PinId;
-		if (runtimePin->Connection != nullptr) {
-			connections.Add(std::make_pair(runtimePin->PinId, runtimePin->Connection->PinId));
-		}
-		idToPinMap.Add(runtimePin->PinId, uiPin);
+		InitUiPin(newNode, runtimePin, connections, idToPinMap);
 	}
-
 	return newNode;
 }
 //TODO investigate whether its better to just have 1 input with multiple connections
@@ -132,7 +123,8 @@ double UGFN_R_Output::Evaluate(const FVector3d& pos)
 		//assuming 1-1 connection on these pins
 		if (pin->Connection != nullptr) {
 			UGFN_R_BaseDouble* node = Cast<UGFN_R_BaseDouble>(pin->Connection->OwningNode);
-			inputs.Add(node->Evaluate(pos));
+			//if cast succeeded -- i think this check is technically redundant due to the schema but better safe than crashing
+			if (node != nullptr) inputs.Add(node->Evaluate(pos));
 		}
 	}
 	//i think this is the only way to do min for an arbitrary number of values
@@ -143,4 +135,15 @@ double UGFN_R_Output::Evaluate(const FVector3d& pos)
 		}
 	}
 	return output;
+}
+
+UEdGraphPin* UGFN_R_Base::InitUiPin(UGFN_E_Base* newNode,UGeoFlowRuntimePin* runtimePin, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UEdGraphPin*>& idToPinMap)
+{
+	UEdGraphPin* UiPin = newNode->CreateCustomPin(runtimePin->Direction, runtimePin->PinName, runtimePin->ReturnType);
+	UiPin->PinId = runtimePin->PinId;
+	if (runtimePin->Connection != nullptr) {
+		connections.Add(std::make_pair(runtimePin->PinId, runtimePin->Connection->PinId));
+	}
+	idToPinMap.Add(runtimePin->PinId, UiPin);
+	return UiPin;
 }

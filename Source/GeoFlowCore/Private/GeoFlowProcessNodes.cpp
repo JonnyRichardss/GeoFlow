@@ -80,49 +80,23 @@ UGFN_R_Base* UGFN_E_Smin::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, 
 
 UGFN_E_Base* UGFN_R_Smin::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UEdGraphPin*>& idToPinMap)
 {
-	UGFN_E_Smin* newNode = NewObject<UGFN_E_Smin>(_workingGraph);
-	newNode->CreateNewGuid();
-	newNode->NodePosX = Position.X;
-	newNode->NodePosY = Position.Y;
+	auto newNode = InitUiNode<UGFN_E_Smin>(_workingGraph);
 
-	//centreinput
-	UEdGraphPin* UiPinA = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Input, InputA->PinName, EGeoFlowReturnType::Double);
+	//inputA
+	UEdGraphPin* UiPinA = InitUiPin(newNode, InputA, connections, idToPinMap);
 	newNode->InputA = UiPinA;
-	UiPinA->PinId = InputA->PinId;
-	if (InputA->Connection != nullptr) {
-		connections.Add(std::make_pair(InputA->PinId, InputA->Connection->PinId));
-	}
 	SetDoubleDefaultValue(UiPinA, a);
-	idToPinMap.Add(InputA->PinId, UiPinA);
-
-	//radiusinput
-	UEdGraphPin* UiPinB = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Input, InputB->PinName, EGeoFlowReturnType::Double);
+	//inputB
+	UEdGraphPin* UiPinB = InitUiPin(newNode, InputB, connections, idToPinMap);
 	newNode->InputB = UiPinB;
-	UiPinB->PinId = InputB->PinId;
-	if (InputB->Connection != nullptr) {
-		connections.Add(std::make_pair(InputB->PinId, InputB->Connection->PinId));
-	}
 	SetDoubleDefaultValue(UiPinB, b);
-	idToPinMap.Add(InputB->PinId, UiPinB);
-
-	//smoothinginput
-	UEdGraphPin* UiPinS = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Input, InputSmoothing->PinName, EGeoFlowReturnType::Double);
+	//inputSmoothing
+	UEdGraphPin* UiPinS = InitUiPin(newNode, InputSmoothing, connections, idToPinMap);
 	newNode->InputSmoothing = UiPinS;
-	UiPinS->PinId = InputSmoothing->PinId;
-	if (InputSmoothing->Connection != nullptr) {
-		connections.Add(std::make_pair(InputSmoothing->PinId, InputSmoothing->Connection->PinId));
-	}
 	SetDoubleDefaultValue(UiPinS, smoothing);
-	idToPinMap.Add(InputSmoothing->PinId, UiPinS);
-
 	//output
-	UEdGraphPin* OutputUiPin = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Output, Output->PinName, EGeoFlowReturnType::Double);
+	UEdGraphPin* OutputUiPin = InitUiPin(newNode, Output, connections, idToPinMap);
 	newNode->Output = OutputUiPin;
-	OutputUiPin->PinId = Output->PinId;
-	if (Output->Connection != nullptr) {
-		connections.Add(std::make_pair(Output->PinId, Output->Connection->PinId));
-	}
-	idToPinMap.Add(Output->PinId, OutputUiPin);
 	return newNode;
 }
 
@@ -220,49 +194,23 @@ UGFN_R_Base* UGFN_E_Smax::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, 
 
 UGFN_E_Base* UGFN_R_Smax::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UEdGraphPin*>& idToPinMap)
 {
-	UGFN_E_Smax* newNode = NewObject<UGFN_E_Smax>(_workingGraph);
-	newNode->CreateNewGuid();
-	newNode->NodePosX = Position.X;
-	newNode->NodePosY = Position.Y;
+	auto newNode = InitUiNode<UGFN_E_Smax>(_workingGraph);
 
-	//centreinput
-	UEdGraphPin* UiPinA = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Input, InputA->PinName, EGeoFlowReturnType::Double);
+	//inputA
+	UEdGraphPin* UiPinA = InitUiPin(newNode, InputA, connections, idToPinMap);
 	newNode->InputA = UiPinA;
-	UiPinA->PinId = InputA->PinId;
-	if (InputA->Connection != nullptr) {
-		connections.Add(std::make_pair(InputA->PinId, InputA->Connection->PinId));
-	}
 	SetDoubleDefaultValue(UiPinA, a);
-	idToPinMap.Add(InputA->PinId, UiPinA);
-
-	//radiusinput
-	UEdGraphPin* UiPinB = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Input, InputB->PinName, EGeoFlowReturnType::Double);
+	//inputB
+	UEdGraphPin* UiPinB = InitUiPin(newNode, InputB, connections, idToPinMap);
 	newNode->InputB = UiPinB;
-	UiPinB->PinId = InputB->PinId;
-	if (InputB->Connection != nullptr) {
-		connections.Add(std::make_pair(InputB->PinId, InputB->Connection->PinId));
-	}
 	SetDoubleDefaultValue(UiPinB, b);
-	idToPinMap.Add(InputB->PinId, UiPinB);
-
-	//smoothinginput
-	UEdGraphPin* UiPinS = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Input, InputSmoothing->PinName, EGeoFlowReturnType::Double);
+	//inputSmoothing
+	UEdGraphPin* UiPinS = InitUiPin(newNode, InputSmoothing, connections, idToPinMap);
 	newNode->InputSmoothing = UiPinS;
-	UiPinS->PinId = InputSmoothing->PinId;
-	if (InputSmoothing->Connection != nullptr) {
-		connections.Add(std::make_pair(InputSmoothing->PinId, InputSmoothing->Connection->PinId));
-	}
 	SetDoubleDefaultValue(UiPinS, smoothing);
-	idToPinMap.Add(InputSmoothing->PinId, UiPinS);
-
 	//output
-	UEdGraphPin* OutputUiPin = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Output, Output->PinName, EGeoFlowReturnType::Double);
+	UEdGraphPin* OutputUiPin = InitUiPin(newNode, Output, connections, idToPinMap);
 	newNode->Output = OutputUiPin;
-	OutputUiPin->PinId = Output->PinId;
-	if (Output->Connection != nullptr) {
-		connections.Add(std::make_pair(Output->PinId, Output->Connection->PinId));
-	}
-	idToPinMap.Add(Output->PinId, OutputUiPin);
 	return newNode;
 }
 
@@ -344,40 +292,19 @@ UGFN_R_Base* UGFN_E_Min::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, T
 
 UGFN_E_Base* UGFN_R_Min::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UEdGraphPin*>& idToPinMap)
 {
-	UGFN_E_Min* newNode = NewObject<UGFN_E_Min>(_workingGraph);
-	newNode->CreateNewGuid();
-	newNode->NodePosX = Position.X;
-	newNode->NodePosY = Position.Y;
+	auto newNode = InitUiNode<UGFN_E_Min>(_workingGraph);
 
-	//centreinput
-	UEdGraphPin* UiPinA = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Input, InputA->PinName, EGeoFlowReturnType::Double);
+	//inputA
+	UEdGraphPin* UiPinA = InitUiPin(newNode, InputA, connections, idToPinMap);
 	newNode->InputA = UiPinA;
-	UiPinA->PinId = InputA->PinId;
-	if (InputA->Connection != nullptr) {
-		connections.Add(std::make_pair(InputA->PinId, InputA->Connection->PinId));
-	}
 	SetDoubleDefaultValue(UiPinA, a);
-	idToPinMap.Add(InputA->PinId, UiPinA);
-
-	//radiusinput
-	UEdGraphPin* UiPinB = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Input, InputB->PinName, EGeoFlowReturnType::Double);
+	//inputB
+	UEdGraphPin* UiPinB = InitUiPin(newNode, InputB, connections, idToPinMap);
 	newNode->InputB = UiPinB;
-	UiPinB->PinId = InputB->PinId;
-	if (InputB->Connection != nullptr) {
-		connections.Add(std::make_pair(InputB->PinId, InputB->Connection->PinId));
-	}
 	SetDoubleDefaultValue(UiPinB, b);
-	idToPinMap.Add(InputB->PinId, UiPinB);
-
-
 	//output
-	UEdGraphPin* OutputUiPin = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Output, Output->PinName, EGeoFlowReturnType::Double);
+	UEdGraphPin* OutputUiPin = InitUiPin(newNode, Output, connections, idToPinMap);
 	newNode->Output = OutputUiPin;
-	OutputUiPin->PinId = Output->PinId;
-	if (Output->Connection != nullptr) {
-		connections.Add(std::make_pair(Output->PinId, Output->Connection->PinId));
-	}
-	idToPinMap.Add(Output->PinId, OutputUiPin);
 	return newNode;
 }
 
@@ -459,40 +386,19 @@ UGFN_R_Base* UGFN_E_Max::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, T
 
 UGFN_E_Base* UGFN_R_Max::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UEdGraphPin*>& idToPinMap)
 {
-	UGFN_E_Max* newNode = NewObject<UGFN_E_Max>(_workingGraph);
-	newNode->CreateNewGuid();
-	newNode->NodePosX = Position.X;
-	newNode->NodePosY = Position.Y;
+	auto newNode = InitUiNode<UGFN_E_Max>(_workingGraph);
 
-	//centreinput
-	UEdGraphPin* UiPinA = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Input, InputA->PinName, EGeoFlowReturnType::Double);
+	//inputA
+	UEdGraphPin* UiPinA = InitUiPin(newNode, InputA, connections, idToPinMap);
 	newNode->InputA = UiPinA;
-	UiPinA->PinId = InputA->PinId;
-	if (InputA->Connection != nullptr) {
-		connections.Add(std::make_pair(InputA->PinId, InputA->Connection->PinId));
-	}
 	SetDoubleDefaultValue(UiPinA, a);
-	idToPinMap.Add(InputA->PinId, UiPinA);
-
-	//radiusinput
-	UEdGraphPin* UiPinB = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Input, InputB->PinName, EGeoFlowReturnType::Double);
+	//inputB
+	UEdGraphPin* UiPinB = InitUiPin(newNode, InputB, connections, idToPinMap);
 	newNode->InputB = UiPinB;
-	UiPinB->PinId = InputB->PinId;
-	if (InputB->Connection != nullptr) {
-		connections.Add(std::make_pair(InputB->PinId, InputB->Connection->PinId));
-	}
 	SetDoubleDefaultValue(UiPinB, b);
-	idToPinMap.Add(InputB->PinId, UiPinB);
-
-
 	//output
-	UEdGraphPin* OutputUiPin = newNode->CreateCustomPin(EEdGraphPinDirection::EGPD_Output, Output->PinName, EGeoFlowReturnType::Double);
+	UEdGraphPin* OutputUiPin = InitUiPin(newNode, Output, connections, idToPinMap);
 	newNode->Output = OutputUiPin;
-	OutputUiPin->PinId = Output->PinId;
-	if (Output->Connection != nullptr) {
-		connections.Add(std::make_pair(Output->PinId, Output->Connection->PinId));
-	}
-	idToPinMap.Add(Output->PinId, OutputUiPin);
 	return newNode;
 }
 
