@@ -38,6 +38,9 @@ const FPinConnectionResponse UGeoFlowGraphSchema::CanCreateConnection(const UEdG
 	if (a->Direction == b->Direction) {
 		return FPinConnectionResponse(CONNECT_RESPONSE_DISALLOW, TEXT("Pins are the same direction"));
 	}
+	//if connection is allowed we want to save the graph (it will be incorrectly saved but the modify time will change which will trigger correct saving later)
+	//TODO
+
 	//always want to ONLY break the inputs connections
 	//therefore outputs can go to multiple places but each input only allows one
 	if (a->Direction == EEdGraphPinDirection::EGPD_Input) {

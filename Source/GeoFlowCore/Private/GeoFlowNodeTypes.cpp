@@ -3,6 +3,7 @@
 //include all other node types for base GetClassFromNodeType
 #include "GeoFlowConstantNodes.h"
 #include "GeoFlowPrimitiveNodes.h"
+
 /*BASE*/
 void UGFN_E_Base::GetNodeContextMenuActions(UToolMenu* menu, UGraphNodeContextMenuContext* context) const
 {

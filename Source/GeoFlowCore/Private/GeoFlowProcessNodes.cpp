@@ -14,65 +14,23 @@ TArray<UEdGraphPin*> UGFN_E_Smin::CreateInputPins(UEdGraphPin* fromPin)
 }
 UGFN_R_Base* UGFN_E_Smin::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UGeoFlowRuntimePin*>& idToPinMap)
 {
-	UGFN_R_Smin* runtimeNode = NewObject<UGFN_R_Smin>(runtimeGraph);
-	runtimeNode->Position = FVector2D(NodePosX, NodePosY);
 
-	//InputA
-	UGeoFlowRuntimePin* RuntimePinA = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	RuntimePinA->PinName = InputA->PinName;
-	RuntimePinA->PinId = InputA->PinId;
-	if (InputA->HasAnyConnections()) {
-		std::pair<FGuid, FGuid> connection = std::make_pair(InputA->PinId, InputA->LinkedTo[0]->PinId);
-		connections.Add(connection);
-	}
-	else {
-		//only updating default value when we have no connection *should* mean that it persists underneath
-		//not entirely sure if this is true
-		runtimeNode->a = GetDoubleDefaultValue(InputA);
-	}
-	idToPinMap.Add(InputA->PinId, RuntimePinA);
-	runtimeNode->InputA = RuntimePinA;
-	RuntimePinA->OwningNode = runtimeNode;
-
-	//InputB
-	UGeoFlowRuntimePin* RuntimePinB = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	RuntimePinB->PinName = InputB->PinName;
-	RuntimePinB->PinId = InputB->PinId;
-	if (InputB->HasAnyConnections()) {
-		std::pair<FGuid, FGuid> connection = std::make_pair(InputB->PinId, InputB->LinkedTo[0]->PinId);
-		connections.Add(connection);
-	}
-	else {
-		runtimeNode->b = GetDoubleDefaultValue(InputB);
-	}
-	idToPinMap.Add(InputB->PinId, RuntimePinB);
-	runtimeNode->InputB = RuntimePinB;
-	RuntimePinB->OwningNode = runtimeNode;
-
-	//InputSmoothing
-	UGeoFlowRuntimePin* RuntimePinS = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	RuntimePinS->PinName = InputSmoothing->PinName;
-	RuntimePinS->PinId = InputSmoothing->PinId;
-	if (InputSmoothing->HasAnyConnections()) {
-		std::pair<FGuid, FGuid> connection = std::make_pair(InputSmoothing->PinId, InputSmoothing->LinkedTo[0]->PinId);
-		connections.Add(connection);
-	}
-	else {
-		runtimeNode->smoothing = GetDoubleDefaultValue(InputSmoothing);
-	}
-	idToPinMap.Add(InputSmoothing->PinId, RuntimePinS);
-	runtimeNode->InputSmoothing = RuntimePinS;
-	RuntimePinS->OwningNode = runtimeNode;
-
-
+	UGFN_R_Smin* runtimeNode = InitRuntimeNode<UGFN_R_Smin>(runtimeGraph);
+	//inputA
+	UGeoFlowRuntimePin* InputARuntimePin = InitRuntimePin(runtimeNode, InputA, connections, idToPinMap, EGeoFlowReturnType::Double);
+	runtimeNode->a = GetDoubleDefaultValue(InputA);
+	runtimeNode->InputA = InputARuntimePin;
+	//inputB
+	UGeoFlowRuntimePin* InputBRuntimePin = InitRuntimePin(runtimeNode, InputB, connections, idToPinMap, EGeoFlowReturnType::Double);
+	runtimeNode->b = GetDoubleDefaultValue(InputB);
+	runtimeNode->InputB = InputBRuntimePin;
+	//inputSmoothing
+	UGeoFlowRuntimePin* InputSmoothingRuntimePin = InitRuntimePin(runtimeNode, InputSmoothing, connections, idToPinMap, EGeoFlowReturnType::Double);
+	runtimeNode->smoothing = GetDoubleDefaultValue(InputSmoothing);
+	runtimeNode->InputSmoothing = InputSmoothingRuntimePin;
 	//Output
-	UGeoFlowRuntimePin* OutputRuntimePin = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	OutputRuntimePin->PinName = Output->PinName;
-	OutputRuntimePin->PinId = Output->PinId;
-	//connections check only on inputs
-	idToPinMap.Add(Output->PinId, OutputRuntimePin);
+	UGeoFlowRuntimePin* OutputRuntimePin = InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Double);
 	runtimeNode->Output = OutputRuntimePin;
-	OutputRuntimePin->OwningNode = runtimeNode;
 
 	return runtimeNode;
 }
@@ -80,7 +38,7 @@ UGFN_R_Base* UGFN_E_Smin::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, 
 
 UGFN_E_Base* UGFN_R_Smin::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UEdGraphPin*>& idToPinMap)
 {
-	auto newNode = InitUiNode<UGFN_E_Smin>(_workingGraph);
+	UGFN_E_Smin* newNode = InitUiNode<UGFN_E_Smin>(_workingGraph);
 
 	//inputA
 	UEdGraphPin* UiPinA = InitUiPin(newNode, InputA, connections, idToPinMap);
@@ -110,6 +68,10 @@ double UGFN_R_Smin::Evaluate(const FVector3d& pos)
 		UGFN_R_BaseDouble* node = Cast<UGFN_R_BaseDouble>(InputB->Connection->OwningNode);
 		b = node->Evaluate(pos);
 	}
+	if (InputSmoothing->Connection != nullptr) {
+		UGFN_R_BaseDouble* node = Cast<UGFN_R_BaseDouble>(InputSmoothing->Connection->OwningNode);
+		smoothing = node->Evaluate(pos);
+	}
 	//https://iquilezles.org/articles/smin/
 	double h = FMath::Clamp(0.5 + 0.5 * (b - a) / smoothing, 0.0, 1.0);
 	return FMath::Lerp(b, a, h) - smoothing * h * (1.0 - h);
@@ -128,65 +90,23 @@ TArray<UEdGraphPin*> UGFN_E_Smax::CreateInputPins(UEdGraphPin* fromPin)
 }
 UGFN_R_Base* UGFN_E_Smax::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UGeoFlowRuntimePin*>& idToPinMap)
 {
-	UGFN_R_Smax* runtimeNode = NewObject<UGFN_R_Smax>(runtimeGraph);
-	runtimeNode->Position = FVector2D(NodePosX, NodePosY);
 
-	//InputA
-	UGeoFlowRuntimePin* RuntimePinA = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	RuntimePinA->PinName = InputA->PinName;
-	RuntimePinA->PinId = InputA->PinId;
-	if (InputA->HasAnyConnections()) {
-		std::pair<FGuid, FGuid> connection = std::make_pair(InputA->PinId, InputA->LinkedTo[0]->PinId);
-		connections.Add(connection);
-	}
-	else {
-		//only updating default value when we have no connection *should* mean that it persists underneath
-		//not entirely sure if this is true
-		runtimeNode->a = GetDoubleDefaultValue(InputA);
-	}
-	idToPinMap.Add(InputA->PinId, RuntimePinA);
-	runtimeNode->InputA = RuntimePinA;
-	RuntimePinA->OwningNode = runtimeNode;
-
-	//InputB
-	UGeoFlowRuntimePin* RuntimePinB = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	RuntimePinB->PinName = InputB->PinName;
-	RuntimePinB->PinId = InputB->PinId;
-	if (InputB->HasAnyConnections()) {
-		std::pair<FGuid, FGuid> connection = std::make_pair(InputB->PinId, InputB->LinkedTo[0]->PinId);
-		connections.Add(connection);
-	}
-	else {
-		runtimeNode->b = GetDoubleDefaultValue(InputB);
-	}
-	idToPinMap.Add(InputB->PinId, RuntimePinB);
-	runtimeNode->InputB = RuntimePinB;
-	RuntimePinB->OwningNode = runtimeNode;
-
-	//InputSmoothing
-	UGeoFlowRuntimePin* RuntimePinS = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	RuntimePinS->PinName = InputSmoothing->PinName;
-	RuntimePinS->PinId = InputSmoothing->PinId;
-	if (InputSmoothing->HasAnyConnections()) {
-		std::pair<FGuid, FGuid> connection = std::make_pair(InputSmoothing->PinId, InputSmoothing->LinkedTo[0]->PinId);
-		connections.Add(connection);
-	}
-	else {
-		runtimeNode->smoothing = GetDoubleDefaultValue(InputSmoothing);
-	}
-	idToPinMap.Add(InputSmoothing->PinId, RuntimePinS);
-	runtimeNode->InputSmoothing = RuntimePinS;
-	RuntimePinS->OwningNode = runtimeNode;
-
-
+	UGFN_R_Smax* runtimeNode = InitRuntimeNode<UGFN_R_Smax>(runtimeGraph);
+	//inputA
+	UGeoFlowRuntimePin* InputARuntimePin = InitRuntimePin(runtimeNode, InputA, connections, idToPinMap, EGeoFlowReturnType::Double);
+	runtimeNode->a = GetDoubleDefaultValue(InputA);
+	runtimeNode->InputA = InputARuntimePin;
+	//inputB
+	UGeoFlowRuntimePin* InputBRuntimePin = InitRuntimePin(runtimeNode, InputB, connections, idToPinMap, EGeoFlowReturnType::Double);
+	runtimeNode->b = GetDoubleDefaultValue(InputB);
+	runtimeNode->InputB = InputBRuntimePin;
+	//inputSmoothing
+	UGeoFlowRuntimePin* InputSmoothingRuntimePin = InitRuntimePin(runtimeNode, InputSmoothing, connections, idToPinMap, EGeoFlowReturnType::Double);
+	runtimeNode->smoothing = GetDoubleDefaultValue(InputSmoothing);
+	runtimeNode->InputSmoothing = InputSmoothingRuntimePin;
 	//Output
-	UGeoFlowRuntimePin* OutputRuntimePin = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	OutputRuntimePin->PinName = Output->PinName;
-	OutputRuntimePin->PinId = Output->PinId;
-	//connections check only on inputs
-	idToPinMap.Add(Output->PinId, OutputRuntimePin);
+	UGeoFlowRuntimePin* OutputRuntimePin = InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Double);
 	runtimeNode->Output = OutputRuntimePin;
-	OutputRuntimePin->OwningNode = runtimeNode;
 
 	return runtimeNode;
 }
@@ -194,7 +114,7 @@ UGFN_R_Base* UGFN_E_Smax::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, 
 
 UGFN_E_Base* UGFN_R_Smax::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UEdGraphPin*>& idToPinMap)
 {
-	auto newNode = InitUiNode<UGFN_E_Smax>(_workingGraph);
+	UGFN_E_Smax* newNode = InitUiNode<UGFN_E_Smax>(_workingGraph);
 
 	//inputA
 	UEdGraphPin* UiPinA = InitUiPin(newNode, InputA, connections, idToPinMap);
@@ -224,8 +144,12 @@ double UGFN_R_Smax::Evaluate(const FVector3d& pos)
 		UGFN_R_BaseDouble* node = Cast<UGFN_R_BaseDouble>(InputB->Connection->OwningNode);
 		b = node->Evaluate(pos);
 	}
-	//https://iquilezles.org/articles/Smax/
-	double h = FMath::Clamp(0.5 + 0.5 * (b + a) / smoothing, 0.0, 1.0);
+	if (InputSmoothing->Connection != nullptr) {
+		UGFN_R_BaseDouble* node = Cast<UGFN_R_BaseDouble>(InputSmoothing->Connection->OwningNode);
+		smoothing = node->Evaluate(pos);
+	}
+	//https://iquilezles.org/articles/distfunctions/
+	double h = FMath::Clamp(0.5 - 0.5 * (b + a) / smoothing, 0.0, 1.0);
 	return FMath::Lerp(b, 0.0-a, h) + smoothing * h * (1.0 - h);
 }
 
@@ -242,51 +166,21 @@ TArray<UEdGraphPin*> UGFN_E_Min::CreateInputPins(UEdGraphPin* fromPin)
 }
 UGFN_R_Base* UGFN_E_Min::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UGeoFlowRuntimePin*>& idToPinMap)
 {
-	UGFN_R_Min* runtimeNode = NewObject<UGFN_R_Min>(runtimeGraph);
-	runtimeNode->Position = FVector2D(NodePosX, NodePosY);
-
-	//InputA
-	UGeoFlowRuntimePin* RuntimePinA = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	RuntimePinA->PinName = InputA->PinName;
-	RuntimePinA->PinId = InputA->PinId;
-	if (InputA->HasAnyConnections()) {
-		std::pair<FGuid, FGuid> connection = std::make_pair(InputA->PinId, InputA->LinkedTo[0]->PinId);
-		connections.Add(connection);
-	}
-	else {
-		//only updating default value when we have no connection *should* mean that it persists underneath
-		//not entirely sure if this is true
-		runtimeNode->a = GetDoubleDefaultValue(InputA);
-	}
-	idToPinMap.Add(InputA->PinId, RuntimePinA);
-	runtimeNode->InputA = RuntimePinA;
-	RuntimePinA->OwningNode = runtimeNode;
-
-	//InputB
-	UGeoFlowRuntimePin* RuntimePinB = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	RuntimePinB->PinName = InputB->PinName;
-	RuntimePinB->PinId = InputB->PinId;
-	if (InputB->HasAnyConnections()) {
-		std::pair<FGuid, FGuid> connection = std::make_pair(InputB->PinId, InputB->LinkedTo[0]->PinId);
-		connections.Add(connection);
-	}
-	else {
-		runtimeNode->b = GetDoubleDefaultValue(InputB);
-	}
-	idToPinMap.Add(InputB->PinId, RuntimePinB);
-	runtimeNode->InputB = RuntimePinB;
-	RuntimePinB->OwningNode = runtimeNode;
-
+	UGFN_R_Min* runtimeNode = InitRuntimeNode<UGFN_R_Min>(runtimeGraph);
+	//inputA
+	UGeoFlowRuntimePin* InputARuntimePin = InitRuntimePin(runtimeNode, InputA, connections, idToPinMap, EGeoFlowReturnType::Double);
+	runtimeNode->a = GetDoubleDefaultValue(InputA);
+	runtimeNode->InputA = InputARuntimePin;
+	//inputB
+	UGeoFlowRuntimePin* InputBRuntimePin = InitRuntimePin(runtimeNode, InputB, connections, idToPinMap, EGeoFlowReturnType::Double);
+	runtimeNode->b = GetDoubleDefaultValue(InputB);
+	runtimeNode->InputB = InputBRuntimePin;
 	//Output
-	UGeoFlowRuntimePin* OutputRuntimePin = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	OutputRuntimePin->PinName = Output->PinName;
-	OutputRuntimePin->PinId = Output->PinId;
-	//connections check only on inputs
-	idToPinMap.Add(Output->PinId, OutputRuntimePin);
+	UGeoFlowRuntimePin* OutputRuntimePin = InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Double);
 	runtimeNode->Output = OutputRuntimePin;
-	OutputRuntimePin->OwningNode = runtimeNode;
 
 	return runtimeNode;
+
 }
 
 
@@ -334,51 +228,18 @@ TArray<UEdGraphPin*> UGFN_E_Max::CreateInputPins(UEdGraphPin* fromPin)
 }
 UGFN_R_Base* UGFN_E_Max::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UGeoFlowRuntimePin*>& idToPinMap)
 {
-	UGFN_R_Max* runtimeNode = NewObject<UGFN_R_Max>(runtimeGraph);
-	runtimeNode->Position = FVector2D(NodePosX, NodePosY);
-
-	//InputA
-	UGeoFlowRuntimePin* RuntimePinA = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	RuntimePinA->PinName = InputA->PinName;
-	RuntimePinA->PinId = InputA->PinId;
-	if (InputA->HasAnyConnections()) {
-		std::pair<FGuid, FGuid> connection = std::make_pair(InputA->PinId, InputA->LinkedTo[0]->PinId);
-		connections.Add(connection);
-	}
-	else {
-		//only updating default value when we have no connection *should* mean that it persists underneath
-		//not entirely sure if this is true
-		runtimeNode->a = GetDoubleDefaultValue(InputA);
-	}
-	idToPinMap.Add(InputA->PinId, RuntimePinA);
-	runtimeNode->InputA = RuntimePinA;
-	RuntimePinA->OwningNode = runtimeNode;
-
-	//InputB
-	UGeoFlowRuntimePin* RuntimePinB = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	RuntimePinB->PinName = InputB->PinName;
-	RuntimePinB->PinId = InputB->PinId;
-	if (InputB->HasAnyConnections()) {
-		std::pair<FGuid, FGuid> connection = std::make_pair(InputB->PinId, InputB->LinkedTo[0]->PinId);
-		connections.Add(connection);
-	}
-	else {
-		runtimeNode->b = GetDoubleDefaultValue(InputB);
-	}
-	idToPinMap.Add(InputB->PinId, RuntimePinB);
-	runtimeNode->InputB = RuntimePinB;
-	RuntimePinB->OwningNode = runtimeNode;
-
-
-
+	UGFN_R_Max* runtimeNode = InitRuntimeNode<UGFN_R_Max>(runtimeGraph);
+	//inputA
+	UGeoFlowRuntimePin* InputARuntimePin = InitRuntimePin(runtimeNode, InputA, connections, idToPinMap, EGeoFlowReturnType::Double);
+	runtimeNode->a = GetDoubleDefaultValue(InputA);
+	runtimeNode->InputA = InputARuntimePin;
+	//inputB
+	UGeoFlowRuntimePin* InputBRuntimePin = InitRuntimePin(runtimeNode, InputB, connections, idToPinMap, EGeoFlowReturnType::Double);
+	runtimeNode->b = GetDoubleDefaultValue(InputB);
+	runtimeNode->InputB = InputBRuntimePin;
 	//Output
-	UGeoFlowRuntimePin* OutputRuntimePin = NewObject<UGeoFlowRuntimePin>(runtimeNode);
-	OutputRuntimePin->PinName = Output->PinName;
-	OutputRuntimePin->PinId = Output->PinId;
-	//connections check only on inputs
-	idToPinMap.Add(Output->PinId, OutputRuntimePin);
+	UGeoFlowRuntimePin* OutputRuntimePin = InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Double);
 	runtimeNode->Output = OutputRuntimePin;
-	OutputRuntimePin->OwningNode = runtimeNode;
 
 	return runtimeNode;
 }

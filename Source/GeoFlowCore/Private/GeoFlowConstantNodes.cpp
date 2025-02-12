@@ -6,28 +6,28 @@
 UGFN_R_Base* UGFN_E_ConstantBool::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UGeoFlowRuntimePin*>& idToPinMap)
 {
 	UGFN_R_ConstantBool* runtimeNode = InitRuntimeNode<UGFN_R_ConstantBool>(runtimeGraph);
-	InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Bool);
+	runtimeNode->Output = InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Bool);
 	runtimeNode->Value = Value;
 	return runtimeNode;
 }
 UGFN_R_Base* UGFN_E_ConstantInt::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UGeoFlowRuntimePin*>& idToPinMap)
 {
 	UGFN_R_ConstantInt* runtimeNode = InitRuntimeNode<UGFN_R_ConstantInt>(runtimeGraph);
-	InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Int);
+	runtimeNode->Output = InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Int);
 	runtimeNode->Value = Value;
 	return runtimeNode;
 }
 UGFN_R_Base* UGFN_E_ConstantDouble::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UGeoFlowRuntimePin*>& idToPinMap)
 {
 	UGFN_R_ConstantDouble* runtimeNode = InitRuntimeNode<UGFN_R_ConstantDouble>(runtimeGraph);
-	InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Double);
+	runtimeNode->Output = InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Double);
 	runtimeNode->Value = Value;
 	return runtimeNode;
 }
 UGFN_R_Base* UGFN_E_ConstantVector::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UGeoFlowRuntimePin*>& idToPinMap)
 {
 	UGFN_R_ConstantVector* runtimeNode = InitRuntimeNode<UGFN_R_ConstantVector>(runtimeGraph);
-	InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Vector);
+	runtimeNode->Output = InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Vector);
 	runtimeNode->Value = Value;
 	return runtimeNode;
 }
@@ -37,28 +37,28 @@ UGFN_R_Base* UGFN_E_ConstantVector::CreateRuntimeNode(UGeoFlowRuntimeGraph* runt
 UGFN_E_Base* UGFN_R_ConstantBool::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UEdGraphPin*>& idToPinMap)
 {
 	UGFN_E_ConstantBool* newNode = InitUiNode<UGFN_E_ConstantBool>(_workingGraph);
-	InitUiPin(newNode, Output, connections, idToPinMap);
+	newNode->Output = InitUiPin(newNode, Output, connections, idToPinMap);
 	newNode->Value = Value;
 	return newNode;
 }
 UGFN_E_Base* UGFN_R_ConstantInt::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UEdGraphPin*>& idToPinMap)
 {
 	UGFN_E_ConstantInt* newNode = InitUiNode<UGFN_E_ConstantInt>(_workingGraph);
-	InitUiPin(newNode, Output, connections, idToPinMap);
+	newNode->Output = InitUiPin(newNode, Output, connections, idToPinMap);
 	newNode->Value = Value;
 	return newNode;
 }
 UGFN_E_Base* UGFN_R_ConstantDouble::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UEdGraphPin*>& idToPinMap)
 {
 	UGFN_E_ConstantDouble* newNode = InitUiNode<UGFN_E_ConstantDouble>(_workingGraph);
-	InitUiPin(newNode, Output, connections, idToPinMap);
+	newNode->Output = InitUiPin(newNode, Output, connections, idToPinMap);
 	newNode->Value = Value;
 	return newNode;
 }
 UGFN_E_Base* UGFN_R_ConstantVector::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UEdGraphPin*>& idToPinMap)
 {
 	UGFN_E_ConstantVector* newNode = InitUiNode<UGFN_E_ConstantVector>(_workingGraph);
-	InitUiPin(newNode, Output, connections, idToPinMap);
+	newNode->Output = InitUiPin(newNode, Output, connections, idToPinMap);
 	newNode->Value = Value;
 	return newNode;
 }

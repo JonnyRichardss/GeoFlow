@@ -38,7 +38,9 @@ public:
 		return OutputPins;
 	};
 	
-
+	bool needsResave = false;
+	virtual void PinDefaultValueChanged(UEdGraphPin* Pin) override { needsResave = true; }
+	virtual void PinConnectionListChanged(UEdGraphPin* Pin) override { needsResave = true; }
 
 	virtual FText GetNodeTitle(ENodeTitleType::Type titleType) const override { return FText::FromString("Default node title"); }
 	virtual FLinearColor GetNodeTitleColor() const override { return FLinearColor::Green; }

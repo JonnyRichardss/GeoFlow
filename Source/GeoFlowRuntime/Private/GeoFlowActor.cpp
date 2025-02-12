@@ -9,7 +9,7 @@ AGeoFlowActor::AGeoFlowActor()
 
 void AGeoFlowActor::OnConstruction(const FTransform& Transform)
 {
-	GeoFlow->ForceRegen();
+	GeoFlow->Regen();
 }
 
 void AGeoFlowActor::BeginPlay()

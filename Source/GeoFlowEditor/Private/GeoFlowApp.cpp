@@ -70,6 +70,7 @@ void GeoFlowEditorApp::OnClose()
 {
 	UpdateWorkingAssetFromGraph();
 	_workingGraph->RemoveOnGraphChangedHandler(_graphChangeListenerHandle);
+	_workingAsset->lastWorkingGraph = nullptr;
 	FAssetEditorToolkit::OnClose();
 }
 
@@ -124,7 +125,7 @@ void GeoFlowEditorApp::UpdateWorkingAssetFromGraph()
 	if (_workingAsset == nullptr || _workingGraph == nullptr) {
 		return;
 	}
-	_workingAsset->SaveFromGraph(_workingGraph);
+	_workingAsset->SaveFromEditor(_workingGraph);
 }
 
 void GeoFlowEditorApp::UpdateEditorGraphFromWorkingAsset()
@@ -134,7 +135,7 @@ void GeoFlowEditorApp::UpdateEditorGraphFromWorkingAsset()
 		_workingAsset->lastWorkingGraph = _workingGraph;
 		return;
 	}
-	_workingAsset->LoadToGraph(_workingGraph);
+	_workingAsset->LoadToEditor(_workingGraph);
 }
 
 

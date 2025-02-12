@@ -16,14 +16,25 @@ class GEOFLOWRUNTIME_API UGeoFlowComponent : public UDynamicMeshComponent
 {
 public:
 	GENERATED_BODY()
+	UPROPERTY(EditAnywhere,Category = "GeoFlow",DisplayName="Frustum generation (special)", meta = (FullyExpand = true))
+	FGeoFlowFrustumSettings FrustumGen;
 	UPROPERTY(EditAnywhere,Category = "GeoFlow",DisplayName="Generation Settings", meta = (FullyExpand = true))
-	FGeoFlowMarchingCubesSettings MCSettings;
+	FGeoFlowGenerationSettings GenSettings;
+	UPROPERTY(EditAnywhere,Category = "GeoFlow")
+	bool EnableFrustumGen = false;
 	UPROPERTY(EditAnywhere,Category = "GeoFlow",DisplayName="GeoFlow Asset")
 	UGeoFlowAsset* geo;
 	UGeoFlowComponent();
 	virtual ~UGeoFlowComponent();
 	void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent);
 
+	//regenerate the mesh from the graph asset
 	UFUNCTION(BlueprintCallable) 
+	void Regen();
+
+	//forces regeneration whether graph has been updated or not
+	UFUNCTION(BlueprintCallable)
 	void ForceRegen();
+	UFUNCTION(BlueprintCallable)
+	void GenFrustum();
 };
