@@ -42,6 +42,8 @@ public:
 	virtual void PinDefaultValueChanged(UEdGraphPin* Pin) override { needsResave = true; }
 	virtual void PinConnectionListChanged(UEdGraphPin* Pin) override { needsResave = true; }
 
+
+
 	virtual FText GetNodeTitle(ENodeTitleType::Type titleType) const override { return FText::FromString("Default node title"); }
 	virtual FLinearColor GetNodeTitleColor() const override { return FLinearColor::Green; }
 	virtual bool CanUserDeleteNode() const override { return true; }
@@ -69,7 +71,6 @@ public:
 		/*no output on final node*/ 
 		return TArray<UEdGraphPin*>();
 	}
-
 	virtual FText GetNodeTitle(ENodeTitleType::Type titleType) const override { return FText::FromString("Output"); }
 	virtual FLinearColor GetNodeTitleColor() const override { return FLinearColor::Black; }
 	virtual bool CanUserDeleteNode() const override { return false; }
@@ -100,13 +101,13 @@ public:
 	virtual FLinearColor GetNodeTitleColor() const override { return FLinearColor::Blue; }
 };
 UCLASS()
-class GEOFLOWCORE_API UGFN_E_BaseDouble : public UGFN_E_Base {
+class GEOFLOWCORE_API UGFN_E_BaseFloat : public UGFN_E_Base {
 	GENERATED_BODY()
 public:
-	virtual EGeoFlowReturnType NodeReturnType() const override { return EGeoFlowReturnType::Double; }
-	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::BaseDouble; }
+	virtual EGeoFlowReturnType NodeReturnType() const override { return EGeoFlowReturnType::Float; }
+	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::BaseFloat; }
 
-	virtual FText GetNodeTitle(ENodeTitleType::Type titleType) const override { return FText::FromString("Default Double node"); }
+	virtual FText GetNodeTitle(ENodeTitleType::Type titleType) const override { return FText::FromString("Default Float node"); }
 	virtual FLinearColor GetNodeTitleColor() const override { return FLinearColor::Green; }
 };
 UCLASS()
@@ -136,7 +137,7 @@ public:
 	UEdGraphPin* InitUiPin(UGFN_E_Base* newNode, UGeoFlowRuntimePin* runtimePin, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UEdGraphPin*>& idToPinMap);
 	template<typename T>
 	T* InitUiNode(UEdGraph* _workingGraph);
-	
+	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) { return FString(); }
 	UPROPERTY()
 	UGeoFlowRuntimePin* Output = nullptr;
 };
@@ -148,8 +149,8 @@ public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::Output; }
 
 	virtual UGFN_E_Base* CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UEdGraphPin*>& idToPinMap);
-	virtual double Evaluate(const FVector3d& pos);
-
+	virtual float Evaluate(const FVector3f& pos);
+	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override;
 	UPROPERTY()
 	TArray<UGeoFlowRuntimePin*> InputPins;
 };
@@ -159,7 +160,7 @@ class GEOFLOWCORE_API UGFN_R_BaseBool : public UGFN_R_Base {
 public:
 	virtual EGeoFlowReturnType NodeReturnType() const override { return EGeoFlowReturnType::Bool; }
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::BaseBool; }
-	virtual bool Evaluate(const FVector3d& pos) { return false; }
+	virtual bool Evaluate(const FVector3f& pos) { return false; }
 };
 UCLASS()
 class GEOFLOWCORE_API UGFN_R_BaseInt : public UGFN_R_Base {
@@ -167,15 +168,15 @@ class GEOFLOWCORE_API UGFN_R_BaseInt : public UGFN_R_Base {
 public:
 	virtual EGeoFlowReturnType NodeReturnType() const override { return EGeoFlowReturnType::Int; }
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::BaseInt; }
-	virtual int Evaluate(const FVector3d& pos) { return 0; }
+	virtual int Evaluate(const FVector3f& pos) { return 0; }
 };
 UCLASS()
-class GEOFLOWCORE_API UGFN_R_BaseDouble : public UGFN_R_Base {
+class GEOFLOWCORE_API UGFN_R_BaseFloat : public UGFN_R_Base {
 	GENERATED_BODY()
 public:
-	virtual EGeoFlowReturnType NodeReturnType() const override { return EGeoFlowReturnType::Double; }
-	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::BaseDouble; }
-	virtual double Evaluate(const FVector3d& pos) { return 0.0; }
+	virtual EGeoFlowReturnType NodeReturnType() const override { return EGeoFlowReturnType::Float; }
+	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::BaseFloat; }
+	virtual float Evaluate(const FVector3f& pos) { return 0.0; }
 };
 UCLASS()
 class GEOFLOWCORE_API UGFN_R_BaseVector : public UGFN_R_Base {
@@ -183,7 +184,7 @@ class GEOFLOWCORE_API UGFN_R_BaseVector : public UGFN_R_Base {
 public:
 	virtual EGeoFlowReturnType NodeReturnType() const override { return EGeoFlowReturnType::Vector; }
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::BaseVector; }
-	virtual FVector3d Evaluate(const FVector3d& pos) { return FVector3d::ZeroVector; }
+	virtual FVector3f Evaluate(const FVector3f& pos) { return FVector3f::ZeroVector; }
 };
 
 template<typename T>

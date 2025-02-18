@@ -50,7 +50,7 @@ TSharedPtr<SGraphPin> FGeoFlowPinFactory::CreatePin(UEdGraphPin* pin) const {
 			return SNew(SGeoFlowPinBool, pin);
 		case EGeoFlowReturnType::Int:
 			return SNew(SGeoFlowPinInteger, pin);
-		case EGeoFlowReturnType::Double:
+		case EGeoFlowReturnType::Float:
 			return SNew(SGeoFlowPinDouble, pin);
 		case EGeoFlowReturnType::Vector:
 			return SNew(SGeoFlowPinVector, pin);

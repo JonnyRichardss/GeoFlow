@@ -1,23 +1,23 @@
 #include "GeoFlowPinDefaultValueOps.h"
 
 
-double GetDoubleDefaultValue(UEdGraphPin* GraphPinObj)
+float GetFloatDefaultValue(UEdGraphPin* GraphPinObj)
 {
-	double Num = double();
+	float Num = float();
 	LexFromString(Num, *GraphPinObj->GetDefaultAsString());
 	return Num;
 }
-void SetDoubleDefaultValue(UEdGraphPin* GraphPinObj, double inDouble)
+void SetFloatDefaultValue(UEdGraphPin* GraphPinObj, float inFloat)
 {
-	GraphPinObj->DefaultValue = LexToString(inDouble);
+	GraphPinObj->DefaultValue = LexToString(inFloat);
 }
 
 
-void SetVectorDefaultValue(UEdGraphPin* GraphPinObj, FVector3d inVec)
+void SetVectorDefaultValue(UEdGraphPin* GraphPinObj, FVector3f inVec)
 {
 	GraphPinObj->DefaultValue = FString::Format(TEXT("{0},{1},{2}"), { inVec.X, inVec.Y, inVec.Z });
 }
-FVector3d GetVectorDefaultValue(UEdGraphPin* GraphPinObj)
+FVector3f GetVectorDefaultValue(UEdGraphPin* GraphPinObj)
 {
 	TArray<FString> VecComponentStrings;
 	FString DefaultString = GraphPinObj->GetDefaultAsString();
@@ -26,7 +26,7 @@ FVector3d GetVectorDefaultValue(UEdGraphPin* GraphPinObj)
 	DefaultString.TrimEndInline();
 	DefaultString.ParseIntoArray(VecComponentStrings, TEXT(","), true);
 	// Construct the vector from the string parts.
-	FVector3d Vec = FVector3d::ZeroVector;
+	FVector3f Vec = FVector3f::ZeroVector;
 	TDefaultNumericTypeInterface<double> NumericTypeInterface{};
 
 	// If default string value contained a fully specified 3D vector, set the vector components, otherwise leave it zero'ed.

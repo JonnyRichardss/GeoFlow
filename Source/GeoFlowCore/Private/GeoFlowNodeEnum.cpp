@@ -18,7 +18,7 @@ FName PinNameFromEnum(EGeoFlowReturnType type)
 		return TEXT("GeoFlowPinBool");
 	case EGeoFlowReturnType::Int:
 		return TEXT("GeoFlowPinInt");
-	case EGeoFlowReturnType::Double:
+	case EGeoFlowReturnType::Float:
 		return TEXT("GeoFlowPinDouble");
 	case EGeoFlowReturnType::Vector:
 		return TEXT("GeoFlowPinVector");
@@ -30,7 +30,7 @@ FName PinNameFromEnum(EGeoFlowReturnType type)
 static TMap<EGeoFlowReturnType, FName> allTypesNames;
 static TMap<FName, EGeoFlowReturnType> allNamesTypes;
 static const TArray<FName> names =				{TEXT("GeoFlowPinNone")  ,TEXT("GeoFlowPinBool")  ,TEXT("GeoFlowPinInt")  ,TEXT("GeoFlowPinDouble")  ,TEXT("GeoFlowPinVector")  };
-static const TArray<EGeoFlowReturnType> types =	{EGeoFlowReturnType::None,EGeoFlowReturnType::Bool,EGeoFlowReturnType::Int,EGeoFlowReturnType::Double,EGeoFlowReturnType::Vector};
+static const TArray<EGeoFlowReturnType> types =	{EGeoFlowReturnType::None,EGeoFlowReturnType::Bool,EGeoFlowReturnType::Int,EGeoFlowReturnType::Float,EGeoFlowReturnType::Vector};
 //i think lazy loading is the easiest way to do this since i cant just {} a TMap
 static void PopulateAllNamesTypes() {
 	for (int i = 0; i < names.Num(); i++) {
@@ -165,9 +165,9 @@ AddNodeArgs EnumToAddNodeArgs(EGeoFlowNodeType type)
 			TEXT("Base"),
 			TEXT("Int")
 		};
-	case EGeoFlowNodeType::BaseDouble:
+	case EGeoFlowNodeType::BaseFloat:
 		return {
-			UGFN_E_BaseDouble::StaticClass(),
+			UGFN_E_BaseFloat::StaticClass(),
 			TEXT("Base"),
 			TEXT("Float")
 		};

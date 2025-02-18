@@ -21,6 +21,8 @@ public:
 	UPROPERTY(EditAnywhere,Category = "GeoFlow",DisplayName="Generation Settings", meta = (FullyExpand = true))
 	FGeoFlowGenerationSettings GenSettings;
 	UPROPERTY(EditAnywhere,Category = "GeoFlow")
+	bool UseGPU = false;
+	UPROPERTY(EditAnywhere,Category = "GeoFlow")
 	bool EnableFrustumGen = false;
 	UPROPERTY(EditAnywhere,Category = "GeoFlow",DisplayName="GeoFlow Asset")
 	UGeoFlowAsset* geo;

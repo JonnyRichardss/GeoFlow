@@ -4,9 +4,9 @@
 TArray<UEdGraphPin*> UGFN_E_Smin::CreateInputPins(UEdGraphPin* fromPin)
 {
 	TArray<UEdGraphPin*> InputPins;
-	InputA = CreateCustomPin(EGPD_Input, "A", EGeoFlowReturnType::Double);
-	InputB = CreateCustomPin(EGPD_Input, "B", EGeoFlowReturnType::Double);
-	InputSmoothing = CreateCustomPin(EGPD_Input, "Smoothing", EGeoFlowReturnType::Double);
+	InputA = CreateCustomPin(EGPD_Input, "A", EGeoFlowReturnType::Float);
+	InputB = CreateCustomPin(EGPD_Input, "B", EGeoFlowReturnType::Float);
+	InputSmoothing = CreateCustomPin(EGPD_Input, "Smoothing", EGeoFlowReturnType::Float);
 	InputPins.Add(InputA);
 	InputPins.Add(InputB);
 	InputPins.Add(InputSmoothing);
@@ -17,19 +17,19 @@ UGFN_R_Base* UGFN_E_Smin::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, 
 
 	UGFN_R_Smin* runtimeNode = InitRuntimeNode<UGFN_R_Smin>(runtimeGraph);
 	//inputA
-	UGeoFlowRuntimePin* InputARuntimePin = InitRuntimePin(runtimeNode, InputA, connections, idToPinMap, EGeoFlowReturnType::Double);
-	runtimeNode->a = GetDoubleDefaultValue(InputA);
+	UGeoFlowRuntimePin* InputARuntimePin = InitRuntimePin(runtimeNode, InputA, connections, idToPinMap, EGeoFlowReturnType::Float);
+	runtimeNode->a = GetFloatDefaultValue(InputA);
 	runtimeNode->InputA = InputARuntimePin;
 	//inputB
-	UGeoFlowRuntimePin* InputBRuntimePin = InitRuntimePin(runtimeNode, InputB, connections, idToPinMap, EGeoFlowReturnType::Double);
-	runtimeNode->b = GetDoubleDefaultValue(InputB);
+	UGeoFlowRuntimePin* InputBRuntimePin = InitRuntimePin(runtimeNode, InputB, connections, idToPinMap, EGeoFlowReturnType::Float);
+	runtimeNode->b = GetFloatDefaultValue(InputB);
 	runtimeNode->InputB = InputBRuntimePin;
 	//inputSmoothing
-	UGeoFlowRuntimePin* InputSmoothingRuntimePin = InitRuntimePin(runtimeNode, InputSmoothing, connections, idToPinMap, EGeoFlowReturnType::Double);
-	runtimeNode->smoothing = GetDoubleDefaultValue(InputSmoothing);
+	UGeoFlowRuntimePin* InputSmoothingRuntimePin = InitRuntimePin(runtimeNode, InputSmoothing, connections, idToPinMap, EGeoFlowReturnType::Float);
+	runtimeNode->smoothing = GetFloatDefaultValue(InputSmoothing);
 	runtimeNode->InputSmoothing = InputSmoothingRuntimePin;
 	//Output
-	UGeoFlowRuntimePin* OutputRuntimePin = InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Double);
+	UGeoFlowRuntimePin* OutputRuntimePin = InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Float);
 	runtimeNode->Output = OutputRuntimePin;
 
 	return runtimeNode;
@@ -43,46 +43,78 @@ UGFN_E_Base* UGFN_R_Smin::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::
 	//inputA
 	UEdGraphPin* UiPinA = InitUiPin(newNode, InputA, connections, idToPinMap);
 	newNode->InputA = UiPinA;
-	SetDoubleDefaultValue(UiPinA, a);
+	SetFloatDefaultValue(UiPinA, a);
 	//inputB
 	UEdGraphPin* UiPinB = InitUiPin(newNode, InputB, connections, idToPinMap);
 	newNode->InputB = UiPinB;
-	SetDoubleDefaultValue(UiPinB, b);
+	SetFloatDefaultValue(UiPinB, b);
 	//inputSmoothing
 	UEdGraphPin* UiPinS = InitUiPin(newNode, InputSmoothing, connections, idToPinMap);
 	newNode->InputSmoothing = UiPinS;
-	SetDoubleDefaultValue(UiPinS, smoothing);
+	SetFloatDefaultValue(UiPinS, smoothing);
 	//output
 	UEdGraphPin* OutputUiPin = InitUiPin(newNode, Output, connections, idToPinMap);
 	newNode->Output = OutputUiPin;
 	return newNode;
 }
 
-double UGFN_R_Smin::Evaluate(const FVector3d& pos)
+FString UGFN_R_Smin::CreateShaderEvalCall(TArray<FString>& PinDeclarations)
+{
+	FString AVal;
+	FString BVal;
+	FString SVal;
+	if (InputA->Connection != nullptr) {
+		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputA->Connection->OwningNode);
+		AVal.Appendf(TEXT("PIN_%s"), *(InputA->PinId.ToString(EGuidFormats::DigitsLower)));
+		PinDeclarations.Add(FString::Printf(TEXT("float %s = %s;\n"), *AVal, *(node->CreateShaderEvalCall(PinDeclarations))));
+	}
+	else {
+		AVal.Appendf(TEXT("%f"), a);
+	}
+	if (InputB->Connection != nullptr) {
+		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputB->Connection->OwningNode);
+		BVal.Appendf(TEXT("PIN_%s"), *(InputB->PinId.ToString(EGuidFormats::DigitsLower)));
+		PinDeclarations.Add(FString::Printf(TEXT("float %s = %s;\n"), *BVal, *(node->CreateShaderEvalCall(PinDeclarations))));
+	}
+	else {
+		BVal.Appendf(TEXT("%f"), b);
+	}
+	if (InputSmoothing->Connection != nullptr) {
+		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputSmoothing->Connection->OwningNode);
+		SVal.Appendf(TEXT("PIN_%s"), *(InputSmoothing->PinId.ToString(EGuidFormats::DigitsLower)));
+		PinDeclarations.Add(FString::Printf(TEXT("float %s = %s;\n"), *SVal, *(node->CreateShaderEvalCall(PinDeclarations))));
+	}
+	else {
+		SVal.Appendf(TEXT("%f"), smoothing);
+	}
+	return FString::Printf(TEXT("Smin(%s,%s,%s)"), *AVal, *BVal,*SVal);
+}
+
+float UGFN_R_Smin::Evaluate(const FVector3f& pos)
 {
 	if (InputA->Connection != nullptr) {
-		UGFN_R_BaseDouble* node = Cast<UGFN_R_BaseDouble>(InputA->Connection->OwningNode);
+		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputA->Connection->OwningNode);
 		a = node->Evaluate(pos);
 	}
 	if (InputA->Connection != nullptr) {
-		UGFN_R_BaseDouble* node = Cast<UGFN_R_BaseDouble>(InputB->Connection->OwningNode);
+		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputB->Connection->OwningNode);
 		b = node->Evaluate(pos);
 	}
 	if (InputSmoothing->Connection != nullptr) {
-		UGFN_R_BaseDouble* node = Cast<UGFN_R_BaseDouble>(InputSmoothing->Connection->OwningNode);
+		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputSmoothing->Connection->OwningNode);
 		smoothing = node->Evaluate(pos);
 	}
 	//https://iquilezles.org/articles/smin/
-	double h = FMath::Clamp(0.5 + 0.5 * (b - a) / smoothing, 0.0, 1.0);
+	float h = FMath::Clamp(0.5 + 0.5 * (b - a) / smoothing, 0.0, 1.0);
 	return FMath::Lerp(b, a, h) - smoothing * h * (1.0 - h);
 }
 
 TArray<UEdGraphPin*> UGFN_E_Smax::CreateInputPins(UEdGraphPin* fromPin)
 {
 	TArray<UEdGraphPin*> InputPins;
-	InputA = CreateCustomPin(EGPD_Input, "A", EGeoFlowReturnType::Double);
-	InputB = CreateCustomPin(EGPD_Input, "B", EGeoFlowReturnType::Double);
-	InputSmoothing = CreateCustomPin(EGPD_Input, "Smoothing", EGeoFlowReturnType::Double);
+	InputA = CreateCustomPin(EGPD_Input, "A", EGeoFlowReturnType::Float);
+	InputB = CreateCustomPin(EGPD_Input, "B", EGeoFlowReturnType::Float);
+	InputSmoothing = CreateCustomPin(EGPD_Input, "Smoothing", EGeoFlowReturnType::Float);
 	InputPins.Add(InputA);
 	InputPins.Add(InputB);
 	InputPins.Add(InputSmoothing);
@@ -93,19 +125,19 @@ UGFN_R_Base* UGFN_E_Smax::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, 
 
 	UGFN_R_Smax* runtimeNode = InitRuntimeNode<UGFN_R_Smax>(runtimeGraph);
 	//inputA
-	UGeoFlowRuntimePin* InputARuntimePin = InitRuntimePin(runtimeNode, InputA, connections, idToPinMap, EGeoFlowReturnType::Double);
-	runtimeNode->a = GetDoubleDefaultValue(InputA);
+	UGeoFlowRuntimePin* InputARuntimePin = InitRuntimePin(runtimeNode, InputA, connections, idToPinMap, EGeoFlowReturnType::Float);
+	runtimeNode->a = GetFloatDefaultValue(InputA);
 	runtimeNode->InputA = InputARuntimePin;
 	//inputB
-	UGeoFlowRuntimePin* InputBRuntimePin = InitRuntimePin(runtimeNode, InputB, connections, idToPinMap, EGeoFlowReturnType::Double);
-	runtimeNode->b = GetDoubleDefaultValue(InputB);
+	UGeoFlowRuntimePin* InputBRuntimePin = InitRuntimePin(runtimeNode, InputB, connections, idToPinMap, EGeoFlowReturnType::Float);
+	runtimeNode->b = GetFloatDefaultValue(InputB);
 	runtimeNode->InputB = InputBRuntimePin;
 	//inputSmoothing
-	UGeoFlowRuntimePin* InputSmoothingRuntimePin = InitRuntimePin(runtimeNode, InputSmoothing, connections, idToPinMap, EGeoFlowReturnType::Double);
-	runtimeNode->smoothing = GetDoubleDefaultValue(InputSmoothing);
+	UGeoFlowRuntimePin* InputSmoothingRuntimePin = InitRuntimePin(runtimeNode, InputSmoothing, connections, idToPinMap, EGeoFlowReturnType::Float);
+	runtimeNode->smoothing = GetFloatDefaultValue(InputSmoothing);
 	runtimeNode->InputSmoothing = InputSmoothingRuntimePin;
 	//Output
-	UGeoFlowRuntimePin* OutputRuntimePin = InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Double);
+	UGeoFlowRuntimePin* OutputRuntimePin = InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Float);
 	runtimeNode->Output = OutputRuntimePin;
 
 	return runtimeNode;
@@ -119,37 +151,69 @@ UGFN_E_Base* UGFN_R_Smax::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::
 	//inputA
 	UEdGraphPin* UiPinA = InitUiPin(newNode, InputA, connections, idToPinMap);
 	newNode->InputA = UiPinA;
-	SetDoubleDefaultValue(UiPinA, a);
+	SetFloatDefaultValue(UiPinA, a);
 	//inputB
 	UEdGraphPin* UiPinB = InitUiPin(newNode, InputB, connections, idToPinMap);
 	newNode->InputB = UiPinB;
-	SetDoubleDefaultValue(UiPinB, b);
+	SetFloatDefaultValue(UiPinB, b);
 	//inputSmoothing
 	UEdGraphPin* UiPinS = InitUiPin(newNode, InputSmoothing, connections, idToPinMap);
 	newNode->InputSmoothing = UiPinS;
-	SetDoubleDefaultValue(UiPinS, smoothing);
+	SetFloatDefaultValue(UiPinS, smoothing);
 	//output
 	UEdGraphPin* OutputUiPin = InitUiPin(newNode, Output, connections, idToPinMap);
 	newNode->Output = OutputUiPin;
 	return newNode;
 }
 
-double UGFN_R_Smax::Evaluate(const FVector3d& pos)
+FString UGFN_R_Smax::CreateShaderEvalCall(TArray<FString>& PinDeclarations)
+{
+	FString AVal;
+	FString BVal;
+	FString SVal;
+	if (InputA->Connection != nullptr) {
+		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputA->Connection->OwningNode);
+		AVal.Appendf(TEXT("PIN_%s"), *(InputA->PinId.ToString(EGuidFormats::DigitsLower)));
+		PinDeclarations.Add(FString::Printf(TEXT("float %s = %s;\n"), *AVal, *(node->CreateShaderEvalCall(PinDeclarations))));
+	}
+	else {
+		AVal.Appendf(TEXT("%f"), a);
+	}
+	if (InputB->Connection != nullptr) {
+		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputB->Connection->OwningNode);
+		BVal.Appendf(TEXT("PIN_%s"), *(InputB->PinId.ToString(EGuidFormats::DigitsLower)));
+		PinDeclarations.Add(FString::Printf(TEXT("float %s = %s;\n"), *BVal, *(node->CreateShaderEvalCall(PinDeclarations))));
+	}
+	else {
+		BVal.Appendf(TEXT("%f"), b);
+	}
+	if (InputSmoothing->Connection != nullptr) {
+		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputSmoothing->Connection->OwningNode);
+		SVal.Appendf(TEXT("PIN_%s"), *(InputSmoothing->PinId.ToString(EGuidFormats::DigitsLower)));
+		PinDeclarations.Add(FString::Printf(TEXT("float %s = %s;\n"), *SVal, *(node->CreateShaderEvalCall(PinDeclarations))));
+	}
+	else {
+		SVal.Appendf(TEXT("%f"), smoothing);
+	}
+	return FString::Printf(TEXT("Smax(%s,%s,%s)"), *AVal, *BVal, *SVal);
+}
+
+float UGFN_R_Smax::Evaluate(const FVector3f& pos)
 {
 	if (InputA->Connection != nullptr) {
-		UGFN_R_BaseDouble* node = Cast<UGFN_R_BaseDouble>(InputA->Connection->OwningNode);
+		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputA->Connection->OwningNode);
 		a = node->Evaluate(pos);
 	}
 	if (InputA->Connection != nullptr) {
-		UGFN_R_BaseDouble* node = Cast<UGFN_R_BaseDouble>(InputB->Connection->OwningNode);
+		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputB->Connection->OwningNode);
 		b = node->Evaluate(pos);
 	}
 	if (InputSmoothing->Connection != nullptr) {
-		UGFN_R_BaseDouble* node = Cast<UGFN_R_BaseDouble>(InputSmoothing->Connection->OwningNode);
+		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputSmoothing->Connection->OwningNode);
 		smoothing = node->Evaluate(pos);
 	}
 	//https://iquilezles.org/articles/distfunctions/
-	double h = FMath::Clamp(0.5 - 0.5 * (b + a) / smoothing, 0.0, 1.0);
+	float h = FMath::Clamp(0.5 - 0.5 * (b + a) / smoothing, 0.0, 1.0);
 	return FMath::Lerp(b, 0.0-a, h) + smoothing * h * (1.0 - h);
 }
 
@@ -158,8 +222,8 @@ double UGFN_R_Smax::Evaluate(const FVector3d& pos)
 TArray<UEdGraphPin*> UGFN_E_Min::CreateInputPins(UEdGraphPin* fromPin)
 {
 	TArray<UEdGraphPin*> InputPins;
-	InputA = CreateCustomPin(EGPD_Input, "A", EGeoFlowReturnType::Double);
-	InputB = CreateCustomPin(EGPD_Input, "B", EGeoFlowReturnType::Double);
+	InputA = CreateCustomPin(EGPD_Input, "A", EGeoFlowReturnType::Float);
+	InputB = CreateCustomPin(EGPD_Input, "B", EGeoFlowReturnType::Float);
 	InputPins.Add(InputA);
 	InputPins.Add(InputB);
 	return InputPins;
@@ -168,15 +232,15 @@ UGFN_R_Base* UGFN_E_Min::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, T
 {
 	UGFN_R_Min* runtimeNode = InitRuntimeNode<UGFN_R_Min>(runtimeGraph);
 	//inputA
-	UGeoFlowRuntimePin* InputARuntimePin = InitRuntimePin(runtimeNode, InputA, connections, idToPinMap, EGeoFlowReturnType::Double);
-	runtimeNode->a = GetDoubleDefaultValue(InputA);
+	UGeoFlowRuntimePin* InputARuntimePin = InitRuntimePin(runtimeNode, InputA, connections, idToPinMap, EGeoFlowReturnType::Float);
+	runtimeNode->a = GetFloatDefaultValue(InputA);
 	runtimeNode->InputA = InputARuntimePin;
 	//inputB
-	UGeoFlowRuntimePin* InputBRuntimePin = InitRuntimePin(runtimeNode, InputB, connections, idToPinMap, EGeoFlowReturnType::Double);
-	runtimeNode->b = GetDoubleDefaultValue(InputB);
+	UGeoFlowRuntimePin* InputBRuntimePin = InitRuntimePin(runtimeNode, InputB, connections, idToPinMap, EGeoFlowReturnType::Float);
+	runtimeNode->b = GetFloatDefaultValue(InputB);
 	runtimeNode->InputB = InputBRuntimePin;
 	//Output
-	UGeoFlowRuntimePin* OutputRuntimePin = InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Double);
+	UGeoFlowRuntimePin* OutputRuntimePin = InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Float);
 	runtimeNode->Output = OutputRuntimePin;
 
 	return runtimeNode;
@@ -191,25 +255,48 @@ UGFN_E_Base* UGFN_R_Min::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::p
 	//inputA
 	UEdGraphPin* UiPinA = InitUiPin(newNode, InputA, connections, idToPinMap);
 	newNode->InputA = UiPinA;
-	SetDoubleDefaultValue(UiPinA, a);
+	SetFloatDefaultValue(UiPinA, a);
 	//inputB
 	UEdGraphPin* UiPinB = InitUiPin(newNode, InputB, connections, idToPinMap);
 	newNode->InputB = UiPinB;
-	SetDoubleDefaultValue(UiPinB, b);
+	SetFloatDefaultValue(UiPinB, b);
 	//output
 	UEdGraphPin* OutputUiPin = InitUiPin(newNode, Output, connections, idToPinMap);
 	newNode->Output = OutputUiPin;
 	return newNode;
 }
 
-double UGFN_R_Min::Evaluate(const FVector3d& pos)
+FString UGFN_R_Min::CreateShaderEvalCall(TArray<FString>& PinDeclarations)
+{
+	FString AVal;
+	FString BVal;
+	if (InputA->Connection != nullptr) {
+		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputA->Connection->OwningNode);
+		AVal.Appendf(TEXT("PIN_%s"), *(InputA->PinId.ToString(EGuidFormats::DigitsLower)));
+		PinDeclarations.Add(FString::Printf(TEXT("float %s = %s;\n"), *AVal, *(node->CreateShaderEvalCall(PinDeclarations))));
+	}
+	else {
+		AVal.Appendf(TEXT("%f"), a);
+	}
+	if (InputB->Connection != nullptr) {
+		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputB->Connection->OwningNode);
+		BVal.Appendf(TEXT("PIN_%s"), *(InputB->PinId.ToString(EGuidFormats::DigitsLower)));
+		PinDeclarations.Add(FString::Printf(TEXT("float %s = %s;\n"), *BVal, *(node->CreateShaderEvalCall(PinDeclarations))));
+	}
+	else {
+		BVal.Appendf(TEXT("%f"), b);
+	}
+	return FString::Printf(TEXT("min(%s,%s)"), *AVal, *BVal);
+}
+
+float UGFN_R_Min::Evaluate(const FVector3f& pos)
 {
 	if (InputA->Connection != nullptr) {
-		UGFN_R_BaseDouble* node = Cast<UGFN_R_BaseDouble>(InputA->Connection->OwningNode);
+		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputA->Connection->OwningNode);
 		a = node->Evaluate(pos);
 	}
 	if (InputA->Connection != nullptr) {
-		UGFN_R_BaseDouble* node = Cast<UGFN_R_BaseDouble>(InputB->Connection->OwningNode);
+		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputB->Connection->OwningNode);
 		b = node->Evaluate(pos);
 	}
 	//https://iquilezles.org/articles/smin/
@@ -220,8 +307,8 @@ double UGFN_R_Min::Evaluate(const FVector3d& pos)
 TArray<UEdGraphPin*> UGFN_E_Max::CreateInputPins(UEdGraphPin* fromPin)
 {
 	TArray<UEdGraphPin*> InputPins;
-	InputA = CreateCustomPin(EGPD_Input, "A", EGeoFlowReturnType::Double);
-	InputB = CreateCustomPin(EGPD_Input, "B", EGeoFlowReturnType::Double);
+	InputA = CreateCustomPin(EGPD_Input, "A", EGeoFlowReturnType::Float);
+	InputB = CreateCustomPin(EGPD_Input, "B", EGeoFlowReturnType::Float);
 	InputPins.Add(InputA);
 	InputPins.Add(InputB);
 	return InputPins;
@@ -230,15 +317,15 @@ UGFN_R_Base* UGFN_E_Max::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, T
 {
 	UGFN_R_Max* runtimeNode = InitRuntimeNode<UGFN_R_Max>(runtimeGraph);
 	//inputA
-	UGeoFlowRuntimePin* InputARuntimePin = InitRuntimePin(runtimeNode, InputA, connections, idToPinMap, EGeoFlowReturnType::Double);
-	runtimeNode->a = GetDoubleDefaultValue(InputA);
+	UGeoFlowRuntimePin* InputARuntimePin = InitRuntimePin(runtimeNode, InputA, connections, idToPinMap, EGeoFlowReturnType::Float);
+	runtimeNode->a = GetFloatDefaultValue(InputA);
 	runtimeNode->InputA = InputARuntimePin;
 	//inputB
-	UGeoFlowRuntimePin* InputBRuntimePin = InitRuntimePin(runtimeNode, InputB, connections, idToPinMap, EGeoFlowReturnType::Double);
-	runtimeNode->b = GetDoubleDefaultValue(InputB);
+	UGeoFlowRuntimePin* InputBRuntimePin = InitRuntimePin(runtimeNode, InputB, connections, idToPinMap, EGeoFlowReturnType::Float);
+	runtimeNode->b = GetFloatDefaultValue(InputB);
 	runtimeNode->InputB = InputBRuntimePin;
 	//Output
-	UGeoFlowRuntimePin* OutputRuntimePin = InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Double);
+	UGeoFlowRuntimePin* OutputRuntimePin = InitRuntimePin(runtimeNode, Output, connections, idToPinMap, EGeoFlowReturnType::Float);
 	runtimeNode->Output = OutputRuntimePin;
 
 	return runtimeNode;
@@ -252,25 +339,48 @@ UGFN_E_Base* UGFN_R_Max::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::p
 	//inputA
 	UEdGraphPin* UiPinA = InitUiPin(newNode, InputA, connections, idToPinMap);
 	newNode->InputA = UiPinA;
-	SetDoubleDefaultValue(UiPinA, a);
+	SetFloatDefaultValue(UiPinA, a);
 	//inputB
 	UEdGraphPin* UiPinB = InitUiPin(newNode, InputB, connections, idToPinMap);
 	newNode->InputB = UiPinB;
-	SetDoubleDefaultValue(UiPinB, b);
+	SetFloatDefaultValue(UiPinB, b);
 	//output
 	UEdGraphPin* OutputUiPin = InitUiPin(newNode, Output, connections, idToPinMap);
 	newNode->Output = OutputUiPin;
 	return newNode;
 }
 
-double UGFN_R_Max::Evaluate(const FVector3d& pos)
+FString UGFN_R_Max::CreateShaderEvalCall(TArray<FString>& PinDeclarations)
+{
+	FString AVal;
+	FString BVal;
+	if (InputA->Connection != nullptr) {
+		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputA->Connection->OwningNode);
+		AVal.Appendf(TEXT("PIN_%s"), *(InputA->PinId.ToString(EGuidFormats::DigitsLower)));
+		PinDeclarations.Add(FString::Printf(TEXT("float %s = %s;\n"), *AVal, *(node->CreateShaderEvalCall(PinDeclarations))));
+	}
+	else {
+		AVal.Appendf(TEXT("%f"), a);
+	}
+	if (InputB->Connection != nullptr) {
+		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputB->Connection->OwningNode);
+		BVal.Appendf(TEXT("PIN_%s"), *(InputB->PinId.ToString(EGuidFormats::DigitsLower)));
+		PinDeclarations.Add(FString::Printf(TEXT("float %s = %s;\n"), *BVal, *(node->CreateShaderEvalCall(PinDeclarations))));
+	}
+	else {
+		BVal.Appendf(TEXT("%f"), b);
+	}
+	return FString::Printf(TEXT("max(%s,%s)"), *AVal, *BVal);
+}
+
+float UGFN_R_Max::Evaluate(const FVector3f& pos)
 {
 	if (InputA->Connection != nullptr) {
-		UGFN_R_BaseDouble* node = Cast<UGFN_R_BaseDouble>(InputA->Connection->OwningNode);
+		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputA->Connection->OwningNode);
 		a = node->Evaluate(pos);
 	}
 	if (InputA->Connection != nullptr) {
-		UGFN_R_BaseDouble* node = Cast<UGFN_R_BaseDouble>(InputB->Connection->OwningNode);
+		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputB->Connection->OwningNode);
 		b = node->Evaluate(pos);
 	}
 	return FMath::Max(-a, b);

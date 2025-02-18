@@ -5,7 +5,7 @@
 #include "GeoFlowPrimitiveNodes.generated.h"
 
 UCLASS()
-class GEOFLOWCORE_API UGFN_E_PrimitiveSphere : public UGFN_E_BaseDouble {
+class GEOFLOWCORE_API UGFN_E_PrimitiveSphere : public UGFN_E_BaseFloat {
 	GENERATED_BODY()
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::PrimitiveSphere; }
@@ -19,7 +19,7 @@ public:
 	UEdGraphPin* RadiusInput = nullptr;
 };
 UCLASS()
-class GEOFLOWCORE_API UGFN_R_PrimitiveSphere : public UGFN_R_BaseDouble {
+class GEOFLOWCORE_API UGFN_R_PrimitiveSphere : public UGFN_R_BaseFloat {
 	GENERATED_BODY()
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::PrimitiveSphere; }
@@ -31,16 +31,16 @@ public:
 	UPROPERTY()
 	UGeoFlowRuntimePin* RadiusInput = nullptr;
 	UPROPERTY()
-	FVector3d centre;
+	FVector3f centre;
 	UPROPERTY()
-	double radius;
-
-	virtual double Evaluate(const FVector3d& pos) override;
+	float radius;
+	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override;
+	virtual float Evaluate(const FVector3f& pos) override;
 };
 
 
 UCLASS()
-class GEOFLOWCORE_API UGFN_E_PrimitiveBox : public UGFN_E_BaseDouble {
+class GEOFLOWCORE_API UGFN_E_PrimitiveBox : public UGFN_E_BaseFloat {
 	GENERATED_BODY()
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::PrimitiveBox; }
@@ -54,7 +54,7 @@ public:
 	UEdGraphPin* RadiusInput = nullptr;
 };
 UCLASS()
-class GEOFLOWCORE_API UGFN_R_PrimitiveBox : public UGFN_R_BaseDouble {
+class GEOFLOWCORE_API UGFN_R_PrimitiveBox : public UGFN_R_BaseFloat {
 	GENERATED_BODY()
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::PrimitiveBox; }
@@ -66,17 +66,17 @@ public:
 	UPROPERTY()
 	UGeoFlowRuntimePin* RadiusInput = nullptr;
 	UPROPERTY()
-	FVector3d centre;
+	FVector3f centre;
 	UPROPERTY()
-	FVector3d radius;
-
-	virtual double Evaluate(const FVector3d& pos) override;
+	FVector3f radius;
+	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override;
+	virtual float Evaluate(const FVector3f& pos) override;
 };
 
 
 
 UCLASS()
-class GEOFLOWCORE_API UGFN_E_PrimitivePlane : public UGFN_E_BaseDouble {
+class GEOFLOWCORE_API UGFN_E_PrimitivePlane : public UGFN_E_BaseFloat {
 	GENERATED_BODY()
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::PrimitivePlane; }
@@ -91,7 +91,7 @@ public:
 	UEdGraphPin* OffsetInput = nullptr;
 };
 UCLASS()
-class GEOFLOWCORE_API UGFN_R_PrimitivePlane : public UGFN_R_BaseDouble {
+class GEOFLOWCORE_API UGFN_R_PrimitivePlane : public UGFN_R_BaseFloat {
 	GENERATED_BODY()
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::PrimitivePlane; }
@@ -103,11 +103,11 @@ public:
 	UPROPERTY()
 	UGeoFlowRuntimePin* OffsetInput = nullptr;
 	UPROPERTY()
-	FVector3d normal;
+	FVector3f normal;
 	UPROPERTY()
-	double offset;
-
-	virtual double Evaluate(const FVector3d& pos) override;
+	float offset;
+	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override;
+	virtual float Evaluate(const FVector3f& pos) override;
 };
 
 
@@ -115,7 +115,7 @@ public:
 
 
 UCLASS()
-class GEOFLOWCORE_API UGFN_E_PrimitiveEllipsoid : public UGFN_E_BaseDouble {
+class GEOFLOWCORE_API UGFN_E_PrimitiveEllipsoid : public UGFN_E_BaseFloat {
 	GENERATED_BODY()
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::PrimitiveEllipsoid; }
@@ -129,7 +129,7 @@ public:
 	UEdGraphPin* RadiusInput = nullptr;
 };
 UCLASS()
-class GEOFLOWCORE_API UGFN_R_PrimitiveEllipsoid : public UGFN_R_BaseDouble {
+class GEOFLOWCORE_API UGFN_R_PrimitiveEllipsoid : public UGFN_R_BaseFloat {
 	GENERATED_BODY()
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::PrimitiveEllipsoid; }
@@ -141,9 +141,9 @@ public:
 	UPROPERTY()
 	UGeoFlowRuntimePin* RadiusInput = nullptr;
 	UPROPERTY()
-	FVector3d centre;
+	FVector3f centre;
 	UPROPERTY()
-	FVector3d radius;
-
-	virtual double Evaluate(const FVector3d& pos) override;
+	FVector3f radius;
+	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override;
+	virtual float Evaluate(const FVector3f& pos) override;
 };

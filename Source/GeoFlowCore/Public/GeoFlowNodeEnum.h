@@ -7,7 +7,7 @@ enum class EGeoFlowReturnType {
 	None,
 	Bool,
 	Int,
-	Double,
+	Float,
 	Vector
 };
 GEOFLOWCORE_API FName  PinNameFromEnum(EGeoFlowReturnType type);
@@ -38,7 +38,7 @@ enum class EGeoFlowNodeType : int {
 	Base,
 	BaseBool,
 	BaseInt,
-	BaseDouble,
+	BaseFloat,
 	BaseVector,
 };
 struct AddNodeArgs {

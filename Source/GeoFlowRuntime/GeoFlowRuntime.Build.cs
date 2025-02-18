@@ -12,16 +12,17 @@ public class GeoFlowRuntime : ModuleRules
 			new string[] {
 				// ... add public include paths required here ...
 				"Runtime/GeometryFramework/Public",
-				"Runtime/GeometryCore/Public"
-			}
+				"Runtime/GeometryCore/Public",
+                
+            }
 			);
 				
 		
 		PrivateIncludePaths.AddRange(
 			new string[] {
 				// ... add other private include paths required here ...
-
-			}
+				//"Engine/Runtime/Renderer/Private",
+            }
 			);
 			
 		
@@ -37,6 +38,8 @@ public class GeoFlowRuntime : ModuleRules
                 "Engine",
                 "Slate",
                 "SlateCore",
+                "MaterialShaderQualitySettings",
+
 								// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -45,7 +48,11 @@ public class GeoFlowRuntime : ModuleRules
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
-				
+                "CoreUObject",
+                "Renderer",
+                "RenderCore",
+                "RHI",
+                "Projects"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
@@ -56,5 +63,11 @@ public class GeoFlowRuntime : ModuleRules
 				// ... add any modules that your module loads dynamically here ...
 			}
 			);
-	}
+        CircularlyReferencedDependentModules.AddRange(
+                    new string[] {
+                        "UnrealEd",
+                        "MaterialUtilities",
+                    }
+                );
+    }
 }

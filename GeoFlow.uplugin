@@ -23,7 +23,7 @@
 		{
 			"Name": "GeoFlowRuntime",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "PostConfigInit"
 		},
 		{
 			"Name": "GeoFlowEditor",

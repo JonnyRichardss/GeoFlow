@@ -1,8 +1,8 @@
 #pragma once
-double GetDoubleDefaultValue(UEdGraphPin* GraphPinObj);
-void SetDoubleDefaultValue(UEdGraphPin* GraphPinObj,double inDouble);
+float GetFloatDefaultValue(UEdGraphPin* GraphPinObj);
+void SetFloatDefaultValue(UEdGraphPin* GraphPinObj,float inFloat);
 
-FVector3d GetVectorDefaultValue(UEdGraphPin* GraphPinObj);
-void SetVectorDefaultValue(UEdGraphPin* GraphPinObj, FVector3d inVec);
+FVector3f GetVectorDefaultValue(UEdGraphPin* GraphPinObj);
+void SetVectorDefaultValue(UEdGraphPin* GraphPinObj, FVector3f inVec);
 
 //TODO Getters and setters for bool and int

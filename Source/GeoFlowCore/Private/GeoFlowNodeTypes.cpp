@@ -8,7 +8,7 @@
 void UGFN_E_Base::GetNodeContextMenuActions(UToolMenu* menu, UGraphNodeContextMenuContext* context) const
 {
 	FToolMenuSection& section = menu->AddSection(TEXT("Section"), FText::FromString(TEXT("Custom Node Actions")));
-	//TODO find a real way to do this
+	//TODO find a real way to do this (Type punning)
 	UGFN_E_Base* node = (UGFN_E_Base*)this;//dont do this in actual code LMAO -- abusing the fact the function is const and getting side effects anyway
 	if (CanUserDeleteNode()) {
 		section.AddMenuEntry(
@@ -67,9 +67,9 @@ FName UGFN_E_Output::GetNextInputName() const
 TArray<UEdGraphPin*> UGFN_E_Output::CreateInputPins(UEdGraphPin* fromPin)
 {
 	TArray<UEdGraphPin*> InputPins;
-	InputPins.Add(CreateCustomPin(EEdGraphPinDirection::EGPD_Input, GetNextInputName(), EGeoFlowReturnType::Double));
-	InputPins.Add(CreateCustomPin(EEdGraphPinDirection::EGPD_Input, GetNextInputName(), EGeoFlowReturnType::Double));
-	InputPins.Add(CreateCustomPin(EEdGraphPinDirection::EGPD_Input, GetNextInputName(), EGeoFlowReturnType::Double));
+	InputPins.Add(CreateCustomPin(EEdGraphPinDirection::EGPD_Input, GetNextInputName(), EGeoFlowReturnType::Float));
+	InputPins.Add(CreateCustomPin(EEdGraphPinDirection::EGPD_Input, GetNextInputName(), EGeoFlowReturnType::Float));
+	InputPins.Add(CreateCustomPin(EEdGraphPinDirection::EGPD_Input, GetNextInputName(), EGeoFlowReturnType::Float));
 
 	return InputPins;
 }
@@ -87,7 +87,7 @@ void UGFN_E_Output::GetNodeContextMenuActions(UToolMenu* menu, UGraphNodeContext
 		FSlateIcon(TEXT("CustomAssetEditorStyle"), TEXT("CustomAssetEditor.NodeAddPinIcon")),
 		FUIAction(FExecuteAction::CreateLambda(
 			[node,this]() {
-				node->CreateCustomPin(EEdGraphPinDirection::EGPD_Input, GetNextInputName(), EGeoFlowReturnType::Double);
+				node->CreateCustomPin(EEdGraphPinDirection::EGPD_Input, GetNextInputName(), EGeoFlowReturnType::Float);
 				node->GetGraph()->NotifyGraphChanged();
 				node->GetGraph()->Modify();
 			}
@@ -99,7 +99,7 @@ UGFN_R_Base* UGFN_E_Output::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph
 {
 	UGFN_R_Output* runtimeNode = InitRuntimeNode<UGFN_R_Output>(runtimeGraph);
 	for (UEdGraphPin* uiPin : Pins) {
-		UGeoFlowRuntimePin* runtimePin = InitRuntimePin(runtimeNode,uiPin,connections,idToPinMap,EGeoFlowReturnType::Double);
+		UGeoFlowRuntimePin* runtimePin = InitRuntimePin(runtimeNode,uiPin,connections,idToPinMap,EGeoFlowReturnType::Float);
 		if (uiPin->Direction == EEdGraphPinDirection::EGPD_Input) {
 			runtimeNode->InputPins.Add(runtimePin);
 		}
@@ -116,25 +116,69 @@ UGFN_E_Base* UGFN_R_Output::CreateEditorNode(UEdGraph* _workingGraph, TArray<std
 }
 //TODO investigate whether its better to just have 1 input with multiple connections
 //im pretty sure there can be a special case in the schema for it
-double UGFN_R_Output::Evaluate(const FVector3d& pos)
+float UGFN_R_Output::Evaluate(const FVector3f& pos)
 {
-	TArray<double> inputs;
+	TArray<float> inputs;
 	inputs.Reserve(InputPins.Num());
 	for (UGeoFlowRuntimePin* pin : InputPins) {
 		//assuming 1-1 connection on these pins
 		if (pin->Connection != nullptr) {
-			UGFN_R_BaseDouble* node = Cast<UGFN_R_BaseDouble>(pin->Connection->OwningNode);
+			UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(pin->Connection->OwningNode);
 			//if cast succeeded -- i think this check is technically redundant due to the schema but better safe than crashing
 			if (node != nullptr) inputs.Add(node->Evaluate(pos));
 		}
 	}
 	//i think this is the only way to do min for an arbitrary number of values
-	double output = DBL_MAX;
-	for (double num : inputs) {
+	float output = FLT_MAX;
+	for (float num : inputs) {
 		if (num < output) {
 			output = num;
 		}
 	}
+	return output;
+}
+
+FString UGFN_R_Output::CreateShaderEvalCall(TArray<FString>& PinDeclarations)
+{
+	FString output;
+	
+	TArray<FString> PinVars;
+	for (UGeoFlowRuntimePin* pin : InputPins) {
+		//assuming 1-1 connection on these pins
+		if (pin->Connection != nullptr) {
+			UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(pin->Connection->OwningNode);
+			//if cast succeeded -- i think this check is technically redundant due to the schema but better safe than crashing
+			if (node != nullptr) {
+				//add node as a variable
+				//add code to choose min of vars
+				FString pinVar;
+				pinVar.Appendf(TEXT("PIN_%s"), *(pin->PinId.ToString(EGuidFormats::DigitsLower)));
+				PinVars.Add(pinVar);
+				PinDeclarations.Add(FString::Printf(TEXT("float %s = %s;\n"),*pinVar, *(node->CreateShaderEvalCall(PinDeclarations))));
+			}
+		}
+	}
+	//special cases for 0, 1 connections
+	//after that just max the numbers LOL
+	int intNumber = 0;
+	do {
+		if (PinVars.Num() == 0) {
+			output.Appendf(TEXT("return FLT_MAX;"));
+		}
+		else if (PinVars.Num() == 1) {
+			FString OurVar = PinVars.Pop(EAllowShrinking::No);
+			output.Appendf(TEXT("return %s;\n"), *OurVar);
+		}
+		else{
+			FString NewVar;
+			FString OurVarA = PinVars.Pop(EAllowShrinking::No);
+			FString OurVarB = PinVars.Pop(EAllowShrinking::No);
+			NewVar.Appendf(TEXT("Intermediate_%i"), intNumber++);
+			output.Appendf(TEXT("float %s = min(%s, %s);\n"), *NewVar, *OurVarA, *OurVarB);
+			PinVars.Insert(NewVar, 0);
+		}
+	} while (PinVars.Num() > 0);
+
 	return output;
 }
 

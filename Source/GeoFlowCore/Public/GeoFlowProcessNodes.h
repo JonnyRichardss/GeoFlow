@@ -4,7 +4,7 @@
 #include "GeoFlowProcessNodes.generated.h"
 
 UCLASS()
-class GEOFLOWCORE_API UGFN_E_Smin : public UGFN_E_BaseDouble {
+class GEOFLOWCORE_API UGFN_E_Smin : public UGFN_E_BaseFloat {
 	GENERATED_BODY()
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::Smin; }
@@ -19,7 +19,7 @@ public:
 	UEdGraphPin* InputSmoothing = nullptr;
 };
 UCLASS()
-class GEOFLOWCORE_API UGFN_R_Smin : public UGFN_R_BaseDouble {
+class GEOFLOWCORE_API UGFN_R_Smin : public UGFN_R_BaseFloat {
 	GENERATED_BODY()
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::Smin; }
@@ -33,18 +33,18 @@ public:
 	UPROPERTY()
 	UGeoFlowRuntimePin* InputSmoothing = nullptr;
 	UPROPERTY()
-	double a;
+	float a;
 	UPROPERTY()
-	double b;
+	float b;
 	UPROPERTY()
-	double smoothing;
-
-	virtual double Evaluate(const FVector3d& pos) override;
+	float smoothing;
+	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override;
+	virtual float Evaluate(const FVector3f& pos) override;
 };
 
 
 UCLASS()
-class GEOFLOWCORE_API UGFN_E_Smax : public UGFN_E_BaseDouble {
+class GEOFLOWCORE_API UGFN_E_Smax : public UGFN_E_BaseFloat {
 	GENERATED_BODY()
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::Smax; }
@@ -59,7 +59,7 @@ public:
 	UEdGraphPin* InputSmoothing = nullptr;
 };
 UCLASS()
-class GEOFLOWCORE_API UGFN_R_Smax : public UGFN_R_BaseDouble {
+class GEOFLOWCORE_API UGFN_R_Smax : public UGFN_R_BaseFloat {
 	GENERATED_BODY()
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::Smax; }
@@ -73,19 +73,19 @@ public:
 	UPROPERTY()
 	UGeoFlowRuntimePin* InputSmoothing = nullptr;
 	UPROPERTY()
-	double a;
+	float a;
 	UPROPERTY()
-	double b;
+	float b;
 	UPROPERTY()
-	double smoothing;
-
-	virtual double Evaluate(const FVector3d& pos) override;
+	float smoothing;
+	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override;
+	virtual float Evaluate(const FVector3f& pos) override;
 };
 
 
 
 UCLASS()
-class GEOFLOWCORE_API UGFN_E_Min : public UGFN_E_BaseDouble {
+class GEOFLOWCORE_API UGFN_E_Min : public UGFN_E_BaseFloat {
 	GENERATED_BODY()
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::Min; }
@@ -100,7 +100,7 @@ public:
 
 };
 UCLASS()
-class GEOFLOWCORE_API UGFN_R_Min : public UGFN_R_BaseDouble {
+class GEOFLOWCORE_API UGFN_R_Min : public UGFN_R_BaseFloat {
 	GENERATED_BODY()
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::Min; }
@@ -113,19 +113,17 @@ public:
 	UGeoFlowRuntimePin* InputB = nullptr;
 
 	UPROPERTY()
-	double a;
+	float a;
 	UPROPERTY()
-	double b;
-	UPROPERTY()
-	double smoothing;
-
-	virtual double Evaluate(const FVector3d& pos) override;
+	float b;
+	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override;
+	virtual float Evaluate(const FVector3f& pos) override;
 };
 
 
 
 UCLASS()
-class GEOFLOWCORE_API UGFN_E_Max : public UGFN_E_BaseDouble {
+class GEOFLOWCORE_API UGFN_E_Max : public UGFN_E_BaseFloat {
 	GENERATED_BODY()
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::Max; }
@@ -140,7 +138,7 @@ public:
 
 };
 UCLASS()
-class GEOFLOWCORE_API UGFN_R_Max : public UGFN_R_BaseDouble {
+class GEOFLOWCORE_API UGFN_R_Max : public UGFN_R_BaseFloat {
 	GENERATED_BODY()
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::Max; }
@@ -153,11 +151,9 @@ public:
 	UGeoFlowRuntimePin* InputB = nullptr;
 
 	UPROPERTY()
-	double a;
+	float a;
 	UPROPERTY()
-	double b;
-	UPROPERTY()
-	double smoothing;
-
-	virtual double Evaluate(const FVector3d& pos) override;
+	float b;
+	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override;
+	virtual float Evaluate(const FVector3f& pos) override;
 };

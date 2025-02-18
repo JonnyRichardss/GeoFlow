@@ -6,10 +6,14 @@
 #include "DynamicMesh/MeshNormals.h"
 #include "GeoFlowNodeTypes.h"
 #include "TriangulationTable.h"
-
+#include "GeoFlowRuntime/Public/MarchingCubesComputeShader.h"
+#include "Misc/Paths.h"
+#include "Misc/CoreMisc.h"
+#include "Interfaces/IPluginManager.h"
 DECLARE_STATS_GROUP(TEXT("JR_MarchingProfiling"),STATGROUP_JR,STATCAT_JR)
 DECLARE_DWORD_ACCUMULATOR_STAT(TEXT("JR_LastEvaluateCalls"),JR_EVAL_CALLS,STATGROUP_JR)
 DECLARE_DWORD_ACCUMULATOR_STAT(TEXT("JR_LastSamplesInsideObject"),JR_EVAL_SUCCESSES,STATGROUP_JR)
+DECLARE_DWORD_ACCUMULATOR_STAT(TEXT("JR_LastCubesMarched"),JR_TOTAL_CUBES,STATGROUP_JR)
 //#include "IcosphereGenerator.h"
 void UGeoFlowAsset::Generate(UGeoFlowComponent* parent)
 {
@@ -60,6 +64,68 @@ void UGeoFlowAsset::GenFrustum(UGeoFlowComponent* parent)
 
 	parent->NotifyMeshUpdated();
 	LastGenerate = FDateTime::UtcNow();
+}
+void UGeoFlowAsset::GenGPU(UGeoFlowComponent* parent)
+{
+	if (GpuRunning) return;
+	if (parent == nullptr) {
+		return;
+	}
+
+	if (lastWorkingGraph != nullptr) {
+		SaveFromEditor(lastWorkingGraph);
+	}
+	FDynamicMesh3* EditMesh = parent->GetMesh();
+	if (!IsValid(Graph)) return;
+
+	for (UGFN_R_Base* node : Graph->Nodes) {
+		if (node->NodeType() == EGeoFlowNodeType::Output) {
+			_outputNode = Cast<UGFN_R_Output>(node);
+			break;
+		}
+	}
+	FString Source = MakeShaderSource();
+	//SAVE SOURCE
+	FString shaderDir = IPluginManager::Get().FindPlugin("GeoFlow")->GetBaseDir() + "/Shaders/Private";
+	FFileHelper::SaveStringToFile(Source, *(shaderDir+ "/MarchingCubesBody.ush"));
+	FString TouchFile;
+	FFileHelper::LoadFileToString(TouchFile, *(shaderDir + "/MarchingCubesCompute.usf"));
+	//REGEN SHADER
+
+	parent->GetWorld()->Exec(GetWorld(), TEXT("RecompileShaders changed"));
+	if (parent->EnableFrustumGen) {
+		FrustumMakePoints(AllPoints, parent);
+	}
+	else {
+		MakePoints(AllPoints, parent);
+	}
+	int numGroups = AllPoints.Num() / 64;
+	FGeoFlowMarchingCubesComputeDispatchParams Params(numGroups, 1, 1, AllPoints, Vals);
+	GpuRunning = true;
+	FGeoFlowMarchingCubesInterface::Dispatch(Params, [this,EditMesh,parent](int errorVal) {
+		UE_LOG(LogTemp, Warning, TEXT("GPU IS BACK"));
+		
+		for (int i = 0; i < Vals.Num() -8; i += 8) {
+			//this is DANGEROUS (technically) but i think it cant really error (just based on vibes tbh
+			CubeFromSamples(&AllPoints[i], &Vals[i], EditMesh);
+		}
+		//compute normals -- the builtin calculation from faces seems better than my not-quite-a-derivative method
+		if (!EditMesh->HasAttributes()) EditMesh->EnableAttributes();
+		UE::Geometry::FMeshNormals normals(EditMesh);
+		if (EditMesh->Attributes()->PrimaryNormals()->ElementCount() == 0)
+		{
+			EditMesh->Attributes()->PrimaryNormals()->CreateFromPredicate([](int, int, int)->bool {return true; }, 0.0f);
+		}
+		EditMesh->EnableVertexNormals(FVector3f::ZeroVector);
+		normals.RecomputeOverlayNormals(EditMesh->Attributes()->PrimaryNormals(), true, true);
+		normals.CopyToOverlay(EditMesh->Attributes()->PrimaryNormals(), false);
+		parent->NotifyMeshUpdated();
+		LastGenerate = FDateTime::UtcNow();
+		//unallocing might not be really wanted for fixed gen size that runs repeatedly but oh well
+		AllPoints.Empty();
+		Vals.Empty();
+		GpuRunning = false;
+		});
 }
 void UGeoFlowAsset::SaveFromEditor(UEdGraph* _workingGraph)
 {
@@ -126,6 +192,7 @@ void UGeoFlowAsset::DoMarchingCubes(UE::Geometry::FDynamicMesh3* EditMesh,const 
 	DECLARE_SCOPE_CYCLE_COUNTER(TEXT("MarchingCubes"),JR_MARCHINGCUBES_FULL,STATGROUP_JR)
 	SET_DWORD_STAT(JR_EVAL_CALLS,0)
 	SET_DWORD_STAT(JR_EVAL_SUCCESSES,0)
+	SET_DWORD_STAT(JR_TOTAL_CUBES, 0)
 	auto boundingRadius = settings.boundingRadius;
 	auto stepSize = settings.stepSize;
 	auto objectCentre = settings.objectCentre;
@@ -137,16 +204,17 @@ void UGeoFlowAsset::DoMarchingCubes(UE::Geometry::FDynamicMesh3* EditMesh,const 
 	for (int xi = 0; xi < numSteps; xi++) {
 		for (int yi = 0; yi < numSteps; yi++) {
 			for (int zi = 0; zi < numSteps; zi++) {
+				INC_DWORD_STAT(JR_TOTAL_CUBES)
 				double x = (objectCentre.X - boundingRadius) + (xi * stepSize);
 				double y = (objectCentre.Y - boundingRadius) + (yi * stepSize);
 				double z = (objectCentre.Z - boundingRadius) + (zi * stepSize);
-				FVector3d points[8];
+				FVector3f points[8];
 				FIntVector3 cornerOffsets[8] = { {-1,-1,-1},{-1,1,-1},{1,1,-1},{1,-1,-1},{-1,-1,1},{-1,1,1},{1,1,1},{1,-1,1} };
 				for (int idx = 0; idx < 8; idx++) {
 					int j = cornerOffsets[idx].X;
 					int k = cornerOffsets[idx].Y;
 					int l = cornerOffsets[idx].Z;
-					points[idx] = FVector3d(x + (j * (stepSize / 2.0)), y + (k * (stepSize / 2.0)), z + (l * (stepSize / 2.0)));
+					points[idx] = FVector3f(x + (j * (stepSize / 2.0)), y + (k * (stepSize / 2.0)), z + (l * (stepSize / 2.0)));
 				}
 				SampleCube(points, cubeDiagonalSize, EditMesh);
 
@@ -167,16 +235,19 @@ void UGeoFlowAsset::DoMarchingCubes(UE::Geometry::FDynamicMesh3* EditMesh,const 
 }
 void UGeoFlowAsset::MarchThroughFrustum(UE::Geometry::FDynamicMesh3* EditMesh, UGeoFlowComponent* parent)
 {
+	SET_DWORD_STAT(JR_EVAL_CALLS, 0)
+	SET_DWORD_STAT(JR_EVAL_SUCCESSES, 0)
+	SET_DWORD_STAT(JR_TOTAL_CUBES,0)
 	UWorld* World = parent->GetWorld();
 	if (!IsValid(World)) return;
 	APlayerCameraManager* PlayerCamera = World->GetFirstPlayerController()->PlayerCameraManager;
 	if (!IsValid(PlayerCamera)) return;
 	FMinimalViewInfo view = PlayerCamera->GetCameraCacheView();
-	FVector3d startPos = PlayerCamera->GetCameraLocation() - parent->GetComponentLocation();
+	FVector startPos = PlayerCamera->GetCameraLocation() - parent->GetComponentLocation();
 	FRotator worldToCameraSpace = PlayerCamera->GetCameraRotation();
-	FVector3d wDir = worldToCameraSpace.RotateVector(FVector::ForwardVector);
+	FVector wDir = worldToCameraSpace.RotateVector(FVector::ForwardVector);
 	
-	FVector3d pos = startPos;
+	FVector pos = startPos;
 	double w = view.GetFinalPerspectiveNearClipPlane();
 	double lastW = 0;
 	for (int stepsW = 0; stepsW < parent->FrustumGen.numStepsW; stepsW++) {
@@ -186,8 +257,8 @@ void UGeoFlowAsset::MarchThroughFrustum(UE::Geometry::FDynamicMesh3* EditMesh, U
 		double viewHeight = viewWidth / view.AspectRatio;
 		double stepWidthX = viewWidth / (double)parent->FrustumGen.Divisions;
 		double stepWidthY = stepWidthX / view.AspectRatio;
-		FVector3d cornerPos = pos + worldToCameraSpace.RotateVector(FVector3d(0.0,0.0-(viewWidth / 2.0), 0.0-(viewHeight / 2.0)));
-		FVector3d otherCorner = pos - worldToCameraSpace.RotateVector(FVector3d(0.0,0.0-(viewWidth / 2.0), 0.0-(viewHeight / 2.0)));
+		FVector cornerPos = pos + worldToCameraSpace.RotateVector(FVector(0.0,0.0-(viewWidth / 2.0), 0.0-(viewHeight / 2.0)));
+		FVector otherCorner = pos - worldToCameraSpace.RotateVector(FVector(0.0,0.0-(viewWidth / 2.0), 0.0-(viewHeight / 2.0)));
 		/*
 		if (stepsW > 10 && stepsW < 30) {
 			DrawDebugSphere(World, pos, 10.0, 10, FColor::Red);
@@ -197,21 +268,22 @@ void UGeoFlowAsset::MarchThroughFrustum(UE::Geometry::FDynamicMesh3* EditMesh, U
 		*/
 		for (int i = 0; i < parent->FrustumGen.Divisions; i++) {
 			for (int j = 0; j < parent->FrustumGen.Divisions; j++) {
-				FVector3d samplePos = cornerPos + worldToCameraSpace.RotateVector(FVector3d(0.0,stepWidthX * i, stepWidthY * j));
+				INC_DWORD_STAT(JR_TOTAL_CUBES)
+				FVector samplePos = cornerPos + worldToCameraSpace.RotateVector(FVector(0.0,stepWidthX * i, stepWidthY * j));
 
 				//probably can un-manual this a bit
-				FVector3d points[8];
-				points[0] = samplePos + worldToCameraSpace.RotateVector(FVector3d(0.0 - (lastW / 2),0.0 - (stepWidthX / 2.0), 0.0 - (stepWidthY / 2.0)));//{-1,-1,-1}
-				points[1] = samplePos + worldToCameraSpace.RotateVector(FVector3d(0.0 - (lastW / 2),0.0 - (stepWidthX / 2.0),(stepWidthY / 2.0)		  ));//{-1,1,-1}
-				points[2] = samplePos + worldToCameraSpace.RotateVector(FVector3d(0.0 - (lastW / 2),(stepWidthX / 2.0)	  , (stepWidthY / 2.0)		  ));//{1,1,-1}
-				points[3] = samplePos + worldToCameraSpace.RotateVector(FVector3d(0.0 - (lastW / 2),(stepWidthX / 2.0)	  , 0.0 - (stepWidthY / 2.0)  ));//{1,-1,-1}
+				FVector3f points[8];
+				points[0] = FVector3f(samplePos + worldToCameraSpace.RotateVector(FVector(0.0 - (lastW / 2),0.0 - (stepWidthX / 2.0), 0.0 - (stepWidthY / 2.0))));//{-1,-1,-1}
+				points[1] = FVector3f(samplePos + worldToCameraSpace.RotateVector(FVector(0.0 - (lastW / 2),0.0 - (stepWidthX / 2.0),(stepWidthY / 2.0)		  )));//{-1,1,-1}
+				points[2] = FVector3f(samplePos + worldToCameraSpace.RotateVector(FVector(0.0 - (lastW / 2),(stepWidthX / 2.0)	  , (stepWidthY / 2.0)		  )));//{1,1,-1}
+				points[3] = FVector3f(samplePos + worldToCameraSpace.RotateVector(FVector(0.0 - (lastW / 2),(stepWidthX / 2.0)	  , 0.0 - (stepWidthY / 2.0)  )));//{1,-1,-1}
 																								   
 																								   
-				lastW = FMath::Max(stepWidthX, lastW);											   
-				points[4] = samplePos + worldToCameraSpace.RotateVector(FVector3d(		(lastW / 2),0.0 - (stepWidthX / 2.0), 0.0 - (stepWidthY / 2.0)));//{-1,-1,1}
-				points[5] = samplePos + worldToCameraSpace.RotateVector(FVector3d(		(lastW / 2),0.0 - (stepWidthX / 2.0),(stepWidthY / 2.0)		  ));//{-1,1,1}
-				points[6] = samplePos + worldToCameraSpace.RotateVector(FVector3d(		(lastW / 2),(stepWidthX / 2.0)	  , (stepWidthY / 2.0)		  ));//{1,1,1}
-				points[7] = samplePos + worldToCameraSpace.RotateVector(FVector3d(		(lastW / 2),(stepWidthX / 2.0)	  , 0.0 - (stepWidthY / 2.0)  ));//{1,-1,1}
+				lastW = FMath::Max(stepWidthX / parent->FrustumGen.DistanceScaling, lastW);											   
+				points[4] = FVector3f(samplePos + worldToCameraSpace.RotateVector(FVector(		(lastW / 2),0.0 - (stepWidthX / 2.0), 0.0 - (stepWidthY / 2.0))));//{-1,-1,1}
+				points[5] = FVector3f(samplePos + worldToCameraSpace.RotateVector(FVector(		(lastW / 2),0.0 - (stepWidthX / 2.0),(stepWidthY / 2.0)		  )));//{-1,1,1}
+				points[6] = FVector3f(samplePos + worldToCameraSpace.RotateVector(FVector(		(lastW / 2),(stepWidthX / 2.0)	  , (stepWidthY / 2.0)		  )));//{1,1,1}
+				points[7] = FVector3f(samplePos + worldToCameraSpace.RotateVector(FVector(		(lastW / 2),(stepWidthX / 2.0)	  , 0.0 - (stepWidthY / 2.0)  )));//{1,-1,1}
 				/*
 				if (stepsW ==15 || stepsW == 16) {
 					if (i == parent->FrustumGen.Divisions / 2 && j == parent->FrustumGen.Divisions / 2 || i == (parent->FrustumGen.Divisions / 2) +1 && j == parent->FrustumGen.Divisions / 2) {
@@ -241,24 +313,123 @@ void UGeoFlowAsset::MarchThroughFrustum(UE::Geometry::FDynamicMesh3* EditMesh, U
 	normals.RecomputeOverlayNormals(EditMesh->Attributes()->PrimaryNormals(), true, true);
 	normals.CopyToOverlay(EditMesh->Attributes()->PrimaryNormals(), false);
 }
-void UGeoFlowAsset::SampleCube(FVector3d points[8], double cubeDiagonalSize, UE::Geometry::FDynamicMesh3* EditMesh)
+void UGeoFlowAsset::MakePoints(TArray<FVector3f>& points, UGeoFlowComponent* parent)
 {
-	int cubeCase = 0;
+	auto boundingRadius = parent->GenSettings.boundingRadius;
+	auto stepSize = parent->GenSettings.stepSize;
+	auto objectCentre = parent->GenSettings.objectCentre;
+	int numSteps = (boundingRadius * 2) / stepSize;
 
-	double values[8];
-	FVector3d vertices[12];
-	bool vertEnabled[12] = { false };
-	int vertIDs[12];
+	double cubeDiagonalSize = FMath::Sqrt(2 * (2 * stepSize)) + stepSize;
+	for (int xi = 0; xi < numSteps; xi++) {
+		for (int yi = 0; yi < numSteps; yi++) {
+			for (int zi = 0; zi < numSteps; zi++) {
+				double x = (objectCentre.X - boundingRadius) + (xi * stepSize);
+				double y = (objectCentre.Y - boundingRadius) + (yi * stepSize);
+				double z = (objectCentre.Z - boundingRadius) + (zi * stepSize);
+				FVector3f localPoints[8];
+				FIntVector3 cornerOffsets[8] = { {-1,-1,-1},{-1,1,-1},{1,1,-1},{1,-1,-1},{-1,-1,1},{-1,1,1},{1,1,1},{1,-1,1} };
+				for (int idx = 0; idx < 8; idx++) {
+					int j = cornerOffsets[idx].X;
+					int k = cornerOffsets[idx].Y;
+					int l = cornerOffsets[idx].Z;
+					localPoints[idx] = FVector3f(x + (j * (stepSize / 2.0)), y + (k * (stepSize / 2.0)), z + (l * (stepSize / 2.0)));
+				}
+				points.Append(localPoints, 8);
+			}
+		}
+	}
+
+	
+}
+void UGeoFlowAsset::FrustumMakePoints(TArray<FVector3f>& points, UGeoFlowComponent* parent)
+{
+
+	UWorld* World = parent->GetWorld();
+	if (!IsValid(World)) return;
+	APlayerCameraManager* PlayerCamera = World->GetFirstPlayerController()->PlayerCameraManager;
+	if (!IsValid(PlayerCamera)) return;
+	FMinimalViewInfo view = PlayerCamera->GetCameraCacheView();
+	FVector startPos = PlayerCamera->GetCameraLocation() - parent->GetComponentLocation();
+	FRotator worldToCameraSpace = PlayerCamera->GetCameraRotation();
+	FVector wDir = worldToCameraSpace.RotateVector(FVector::ForwardVector);
+
+	FVector pos = startPos;
+	double w = view.GetFinalPerspectiveNearClipPlane();
+	double lastW = 0;
+	for (int stepsW = 0; stepsW < parent->FrustumGen.numStepsW; stepsW++) {
+		pos = startPos + (wDir * w);
+
+		double viewWidth = FMath::Tan(view.FOV / 2.0) * 2.0 * w;
+		double viewHeight = viewWidth / view.AspectRatio;
+		double stepWidthX = viewWidth / (double)parent->FrustumGen.Divisions;
+		double stepWidthY = stepWidthX / view.AspectRatio;
+		FVector cornerPos = pos + worldToCameraSpace.RotateVector(FVector(0.0, 0.0 - (viewWidth / 2.0), 0.0 - (viewHeight / 2.0)));
+		FVector otherCorner = pos - worldToCameraSpace.RotateVector(FVector(0.0, 0.0 - (viewWidth / 2.0), 0.0 - (viewHeight / 2.0)));
+		/*
+		if (stepsW > 10 && stepsW < 30) {
+			DrawDebugSphere(World, pos, 10.0, 10, FColor::Red);
+			DrawDebugSphere(World, cornerPos, 10.0, 10, FColor::Blue);
+			DrawDebugSphere(World, otherCorner, 10.0, 10, FColor::Blue);
+		}
+		*/
+		for (int i = 0; i < parent->FrustumGen.Divisions; i++) {
+			for (int j = 0; j < parent->FrustumGen.Divisions; j++) {
+					FVector samplePos = cornerPos + worldToCameraSpace.RotateVector(FVector(0.0, stepWidthX * i, stepWidthY * j));
+
+				//probably can un-manual this a bit
+				FVector3f localPoints[8];
+				localPoints[0] = FVector3f(samplePos + worldToCameraSpace.RotateVector(FVector(0.0 - (lastW / 2), 0.0 - (stepWidthX / 2.0), 0.0 - (stepWidthY / 2.0))));//{-1,-1,-1}
+				localPoints[1] = FVector3f(samplePos + worldToCameraSpace.RotateVector(FVector(0.0 - (lastW / 2), 0.0 - (stepWidthX / 2.0), (stepWidthY / 2.0))));//{-1,1,-1}
+				localPoints[2] = FVector3f(samplePos + worldToCameraSpace.RotateVector(FVector(0.0 - (lastW / 2), (stepWidthX / 2.0), (stepWidthY / 2.0))));//{1,1,-1}
+				localPoints[3] = FVector3f(samplePos + worldToCameraSpace.RotateVector(FVector(0.0 - (lastW / 2), (stepWidthX / 2.0), 0.0 - (stepWidthY / 2.0))));//{1,-1,-1}
+
+
+				lastW = FMath::Max(stepWidthX / parent->FrustumGen.DistanceScaling, lastW);
+				localPoints[4] = FVector3f(samplePos + worldToCameraSpace.RotateVector(FVector((lastW / 2), 0.0 - (stepWidthX / 2.0), 0.0 - (stepWidthY / 2.0))));//{-1,-1,1}
+				localPoints[5] = FVector3f(samplePos + worldToCameraSpace.RotateVector(FVector((lastW / 2), 0.0 - (stepWidthX / 2.0), (stepWidthY / 2.0))));//{-1,1,1}
+				localPoints[6] = FVector3f(samplePos + worldToCameraSpace.RotateVector(FVector((lastW / 2), (stepWidthX / 2.0), (stepWidthY / 2.0))));//{1,1,1}
+				localPoints[7] = FVector3f(samplePos + worldToCameraSpace.RotateVector(FVector((lastW / 2), (stepWidthX / 2.0), 0.0 - (stepWidthY / 2.0))));//{1,-1,1}
+				/*
+				if (stepsW ==15 || stepsW == 16) {
+					if (i == parent->FrustumGen.Divisions / 2 && j == parent->FrustumGen.Divisions / 2 || i == (parent->FrustumGen.Divisions / 2) +1 && j == parent->FrustumGen.Divisions / 2) {
+						DrawDebugSphere(World, samplePos, 1.0, 5, FColor::Yellow);
+						for (int pointidx = 0; pointidx < 8; pointidx++) {
+							DrawDebugLine(World, samplePos, points[pointidx], FColor::Red, false, -1.0, 0u, 0.5f);
+							DrawDebugSphere(World, points[pointidx], 1.0, 5, FColor::Green);
+						}
+					}
+				}
+				*/
+				points.Append(localPoints,8);
+			}
+		}
+		w += lastW;
+	}
+}
+void UGeoFlowAsset::SampleCube(FVector3f points[8], float cubeDiagonalSize, UE::Geometry::FDynamicMesh3* EditMesh)
+{
+	//TODO convert all doubles to floats -- double was stupid anyway
+	float values[8];
 
 	//get all points
 	for (int idx = 0; idx < 8; idx++) {
-		double sample = SampleSDF(points[idx]);
+		float sample = SampleSDF(points[idx]);
 		if (FMath::Abs(sample) > cubeDiagonalSize) {
 			return;
 		}
 		values[idx] = sample;
 	}
+	CubeFromSamples(points, values, EditMesh);
 
+}
+
+void UGeoFlowAsset::CubeFromSamples(FVector3f points[8], float values[8], UE::Geometry::FDynamicMesh3* EditMesh)
+{
+	int cubeCase = 0;
+	FVector3f vertices[12];
+	bool vertEnabled[12] = { false };
+	int vertIDs[12];
 	//use point samples to determine cube case
 
 	for (int i = 0; i < 8; i++) {
@@ -338,7 +509,7 @@ void UGeoFlowAsset::SampleCube(FVector3d points[8], double cubeDiagonalSize, UE:
 	for (int i = 0; i < 12; i++) {
 		vertIDs[i] = -1;
 		if (vertEnabled[i]) {
-			vertIDs[i] = EditMesh->AppendVertex(vertices[i]);
+			vertIDs[i] = EditMesh->AppendVertex(FVector3d(vertices[i]));
 		}
 	}
 
@@ -346,7 +517,6 @@ void UGeoFlowAsset::SampleCube(FVector3d points[8], double cubeDiagonalSize, UE:
 	for (int i = 0; triTable[cubeCase][i] != -1; i += 3) {
 		EditMesh->AppendTriangle(vertIDs[triTable[cubeCase][i]], vertIDs[triTable[cubeCase][i + 2]], vertIDs[triTable[cubeCase][i + 1]]);
 	}
-
 }
 
 /*
@@ -436,7 +606,7 @@ void UGeoFlowAsset::DoDualContouring(UE::Geometry::FDynamicMesh3* EditMesh, cons
 }
 */
 
-double UGeoFlowAsset::SampleSDF(FVector3d pos)
+float UGeoFlowAsset::SampleSDF(FVector3f pos)
 { 
 	DECLARE_SCOPE_CYCLE_COUNTER(TEXT("SDF Evaluate"),JR_MARCHINGCUBES_EVAL,STATGROUP_JR)
 	INC_DWORD_STAT(JR_EVAL_CALLS)
@@ -446,23 +616,35 @@ double UGeoFlowAsset::SampleSDF(FVector3d pos)
 	}
 	return res;
 }
-FVector3d UGeoFlowAsset::GetSDFNormal(FVector3d pos)
+FVector3f UGeoFlowAsset::GetSDFNormal(FVector3f pos)
 {
-	double d = 0.01;
-	FVector3d output = FVector3d(
-		SampleSDF(FVector3d(pos.X + d, pos.Y, pos.Z)) - SampleSDF(FVector3d(pos.X - d, pos.Y, pos.Z)) / (2.0 * d),
-		SampleSDF(FVector3d(pos.X, pos.Y + d, pos.Z)) - SampleSDF(FVector3d(pos.X, pos.Y - d, pos.Z)) / (2.0 * d),
-		SampleSDF(FVector3d(pos.X, pos.Y, pos.Z + d)) - SampleSDF(FVector3d(pos.X, pos.Y, pos.Z - d)) / (2.0 * d)
+	float d = 0.01;
+	FVector3f output = FVector3f(
+		SampleSDF(FVector3f(pos.X + d, pos.Y, pos.Z)) - SampleSDF(FVector3f(pos.X - d, pos.Y, pos.Z)) / (2.0 * d),
+		SampleSDF(FVector3f(pos.X, pos.Y + d, pos.Z)) - SampleSDF(FVector3f(pos.X, pos.Y - d, pos.Z)) / (2.0 * d),
+		SampleSDF(FVector3f(pos.X, pos.Y, pos.Z + d)) - SampleSDF(FVector3f(pos.X, pos.Y, pos.Z - d)) / (2.0 * d)
 	);
 	output.Normalize();
 	return output;
 }
 
  
-FVector3d UGeoFlowAsset::VertexInterp(FVector3d aPos, FVector3d bPos, double aVal, double bVal)
+FVector3f UGeoFlowAsset::VertexInterp(FVector3f aPos, FVector3f bPos, float aVal, float bVal)
 {
-	double frac = aVal / (bVal - aVal);
+	float frac = aVal / (bVal - aVal);
 	frac = FMath::Abs(frac);
 	return FMath::Lerp(aPos, bPos, frac);
+}
+
+FString UGeoFlowAsset::MakeShaderSource()
+{
+	FString Output;
+	TArray<FString> PinDeclarations;
+	FString endingCode = _outputNode->CreateShaderEvalCall(PinDeclarations);
+	for (FString& dec : PinDeclarations) {
+		Output.Append(dec);
+	}
+	Output.Append(endingCode);
+	return Output;
 }
 

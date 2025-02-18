@@ -38,8 +38,30 @@ void UGeoFlowComponent::ForceRegen()
 {
 	MeshObject->Reset();
 	if (geo != nullptr && !EnableFrustumGen) {
-		geo->Generate(this);
+		if (!UseGPU)
+			geo->Generate(this);
+		else
+			geo->GenGPU(this);
 	}
+	/*
+	if (GpuRunning) return;
+	//This is just test code so it dont matter
+	//but when i do this for real make sure to have a flag if GPU is already dispatched
+	points.Reset();
+	points.Init(FVector3f(2,4,5),128);
+	FGeoFlowMarchingCubesComputeDispatchParams Params(2, 1, 1,points,Vals);
+	GpuRunning = true;
+	FGeoFlowMarchingCubesInterface::Dispatch(Params, [this](int errorVal) {
+		// OutputVal == 10
+		// Called when the results are back from the GPU
+		UE_LOG(LogTemp, Warning, TEXT("GPU IS BACK"));
+		int a = 1;
+		int b = a * 2;
+		GpuRunning = false;
+		});
+	return;
+	*/
+
 }
 
 void UGeoFlowComponent::GenFrustum()

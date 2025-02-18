@@ -32,6 +32,8 @@ struct GEOFLOWRUNTIME_API FGeoFlowFrustumSettings {
 	int numStepsW = 100;
 	UPROPERTY(EditAnywhere)
 	int Divisions = 10;
+	UPROPERTY(EditAnywhere)
+	double DistanceScaling = 1.0;
 
 };
 UCLASS(BlueprintType)
@@ -41,6 +43,8 @@ class GEOFLOWRUNTIME_API UGeoFlowAsset : public UObject
 public:
 	void Generate(UGeoFlowComponent* parent);
 	void GenFrustum(UGeoFlowComponent* parent);
+	void GenGPU(UGeoFlowComponent* parent);
+	void GenFrustumGPU(UGeoFlowComponent* parent);
 	UPROPERTY()
 	UGeoFlowRuntimeGraph* Graph = nullptr;
 	//when loaded - *guarantee* that last generate was BEFORE last graph change
@@ -50,15 +54,24 @@ public:
 	void LoadToEditor(UEdGraph* _workingGraph);
 	bool NeedsResave();
 	UEdGraph* lastWorkingGraph;
+	FString MakeShaderSource();
 protected:
 	
 	void DoMarchingCubes(UE::Geometry::FDynamicMesh3* EditMesh, const FGeoFlowGenerationSettings& settings);
 	void MarchThroughFrustum(UE::Geometry::FDynamicMesh3* EditMesh, UGeoFlowComponent* parent);
-	void SampleCube(FVector3d points[8], double cubeDiagonalSize, UE::Geometry::FDynamicMesh3* EditMesh);
-	double SampleSDF(FVector3d pos);
-	FVector3d GetSDFNormal(FVector3d pos);
-	FVector3d VertexInterp(FVector3d aPos, FVector3d bPos, double aVal, double bVal);
+	void MakePoints(TArray<FVector3f>& points, UGeoFlowComponent* parent);
+	void FrustumMakePoints(TArray<FVector3f>& points, UGeoFlowComponent* parent);
+	float SampleSDF(FVector3f pos);
+	FVector3f GetSDFNormal(FVector3f pos);
+	FVector3f VertexInterp(FVector3f aPos, FVector3f bPos, float aVal, float bVal);
 	UGFN_R_Output* _outputNode;
+	bool GpuRunning = false;
+
+	
+	void SampleCube(FVector3f points[8], float cubeDiagonalSize, UE::Geometry::FDynamicMesh3* EditMesh);
+	void CubeFromSamples(FVector3f points[8], float values[8], UE::Geometry::FDynamicMesh3* EditMesh);
+	TArray<FVector3f> AllPoints;
+	TArray<float> Vals;
 
 	//binned DC for now due to complex linear algebra requirements
 	//int DualContouringSample(UE::Geometry::FDynamicMesh3* EditMesh, FVector3d pos);
