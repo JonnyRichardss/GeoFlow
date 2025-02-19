@@ -48,11 +48,6 @@ public class GeoFlowRuntime : ModuleRules
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
-                "CoreUObject",
-                "Renderer",
-                "RenderCore",
-                "RHI",
-                "Projects"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
@@ -63,11 +58,5 @@ public class GeoFlowRuntime : ModuleRules
 				// ... add any modules that your module loads dynamically here ...
 			}
 			);
-        CircularlyReferencedDependentModules.AddRange(
-                    new string[] {
-                        "UnrealEd",
-                        "MaterialUtilities",
-                    }
-                );
     }
 }

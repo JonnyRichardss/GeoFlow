@@ -16,14 +16,9 @@ class GEOFLOWRUNTIME_API UGeoFlowComponent : public UDynamicMeshComponent
 {
 public:
 	GENERATED_BODY()
-	UPROPERTY(EditAnywhere,Category = "GeoFlow",DisplayName="Frustum generation (special)", meta = (FullyExpand = true))
-	FGeoFlowFrustumSettings FrustumGen;
 	UPROPERTY(EditAnywhere,Category = "GeoFlow",DisplayName="Generation Settings", meta = (FullyExpand = true))
 	FGeoFlowGenerationSettings GenSettings;
-	UPROPERTY(EditAnywhere,Category = "GeoFlow")
-	bool UseGPU = false;
-	UPROPERTY(EditAnywhere,Category = "GeoFlow")
-	bool EnableFrustumGen = false;
+
 	UPROPERTY(EditAnywhere,Category = "GeoFlow",DisplayName="GeoFlow Asset")
 	UGeoFlowAsset* geo;
 	UGeoFlowComponent();
@@ -37,6 +32,4 @@ public:
 	//forces regeneration whether graph has been updated or not
 	UFUNCTION(BlueprintCallable)
 	void ForceRegen();
-	UFUNCTION(BlueprintCallable)
-	void GenFrustum();
 };
