@@ -42,7 +42,7 @@ void UGeoFlowAsset::Generate(UGeoFlowComponent* parent)
 		}
 	}
 	TArray<FIntVector3> primitiveOffsets;
-	FVector3f averagePos;
+	FVector3f averagePos(0.0f,0.0f,0.0f);
 	for (FVector3f position : PrimitivePositions) {
 		averagePos += position;
 	}
@@ -127,7 +127,10 @@ bool UGeoFlowAsset::NeedsResave()
 		
 	}
 	return output;
-}static FIntVector3 cornerOffsets[8] = { {-1,-1,-1},{-1,1,-1},{1,1,-1},{1,-1,-1},{-1,-1,1},{-1,1,1},{1,1,1},{1,-1,1} };
+}
+static FIntVector3 cornerOffsets[8] = { {-1,-1,-1},{-1,1,-1},{1,1,-1},{1,-1,-1},{-1,-1,1},{-1,1,1},{1,1,1},{1,-1,1} };
+static FIntVector3 edgeOffsets[12] = { {-1,0,-1},{0,1,-1},{1,0,-1},{0,-1,-1},{-1,0,1},{0,1,1},{1,0,1},{0,-1,1},{-1,-1,0},{-1,1,0},{1,1,0},{1,-1,0} };
+static std::pair<int, int> edgeVertices[12] = { {0,1},{1,2},{2,3},{3,0},{4,5},{5,6},{6,7},{7,4},{0,4},{1,5},{2,6},{3,7} };
 void UGeoFlowAsset::DoMarchingCubes(UE::Geometry::FDynamicMesh3* EditMesh, const FGeoFlowGenerationSettings& settings, FVector3f objectCentre,TArray<FIntVector3> primitiveOffsets)
 {
 
@@ -135,11 +138,13 @@ void UGeoFlowAsset::DoMarchingCubes(UE::Geometry::FDynamicMesh3* EditMesh, const
 	SET_DWORD_STAT(JR_EVAL_CALLS, 0)
 	SET_DWORD_STAT(JR_EVAL_SUCCESSES, 0)
 	SET_DWORD_STAT(JR_TOTAL_CUBES, 0)
+
 	auto stepSize = settings.stepSize;
 
-	double cubeDiagonalSize = FMath::Sqrt(2 * (2 * stepSize)) + stepSize;
+	double cubeDiagonalSize = FMath::Sqrt(3 * (2 * stepSize) * (2 * stepSize));
 	TArray<FIntVector3> frontier;
 	TArray<FIntVector3> visited;
+	TMap<FIntVector3, int> existingEdges;
 
 	frontier.Append(primitiveOffsets); //start at centre of all primitives
 	//vaguely
@@ -148,15 +153,17 @@ void UGeoFlowAsset::DoMarchingCubes(UE::Geometry::FDynamicMesh3* EditMesh, const
 		INC_DWORD_STAT(JR_TOTAL_CUBES)
 
 		FIntVector3 pos = frontier.Pop();
+
 		visited.Add(pos);
 
-		double x = (objectCentre.X) + (pos.X * stepSize);
-		double y = (objectCentre.Y) + (pos.Y * stepSize);
-		double z = (objectCentre.Z) + (pos.Z * stepSize);
+		double x = (objectCentre.X) + (pos.X *(stepSize));
+		double y = (objectCentre.Y) + (pos.Y *(stepSize));
+		double z = (objectCentre.Z) + (pos.Z *(stepSize));
+
 		FVector3f points[8];
 		float values[8];
 		int cubeCase = 0;
-		FVector3f vertices[12];
+		FIntVector3 edges[12];
 		bool vertEnabled[12] = { false };
 		int vertIDs[12];
 
@@ -164,12 +171,14 @@ void UGeoFlowAsset::DoMarchingCubes(UE::Geometry::FDynamicMesh3* EditMesh, const
 			int j = cornerOffsets[idx].X;
 			int k = cornerOffsets[idx].Y;
 			int l = cornerOffsets[idx].Z;
-			points[idx] = FVector3f(x + (j * (stepSize / 2.0)), y + (k * (stepSize / 2.0)), z + (l * (stepSize / 2.0)));
+			points[idx] = FVector3f(x + (j * stepSize), y + (k * stepSize), z + (l * stepSize));
 		}
-
+		for (int idx = 0; idx < 12; idx++) {
+		}
 		//get all points
 		for (int idx = 0; idx < 8; idx++) {
 			float sample = SampleSDF(points[idx]);
+			if (FMath::IsNaN(sample)) goto cubeDiscard; //if we hit NaN something has gone very wrong
 			//nested-loop means goto is needed to continue twice
 			if (sample > cubeDiagonalSize) {
 				goto cubeDiscard; //cubes OUTSIDE the primitive don't propagate
@@ -191,99 +200,48 @@ void UGeoFlowAsset::DoMarchingCubes(UE::Geometry::FDynamicMesh3* EditMesh, const
 		{
 			goto cubeSkip;
 		}
-		
-			
-		//this stinks but the points are specific to each case so its harder to for loop
-		//sure its fixable (TODO)
-		//determine vertex positions for cube case
-		if (edgeTable[cubeCase] & 1)
-		{
-			vertices[0] = VertexInterp(points[0], points[1], values[0], values[1]);
-			vertEnabled[0] = true;
-		}
-		if (edgeTable[cubeCase] & 2)
-		{
-			vertices[1] = VertexInterp(points[1], points[2], values[1], values[2]);
-			vertEnabled[1] = true;
-		}
-		if (edgeTable[cubeCase] & 4)
-		{
-			vertices[2] = VertexInterp(points[2], points[3], values[2], values[3]);
-			vertEnabled[2] = true;
-		}
-		if (edgeTable[cubeCase] & 8)
-		{
-			vertices[3] = VertexInterp(points[3], points[0], values[3], values[0]);
-			vertEnabled[3] = true;
-		}
-		if (edgeTable[cubeCase] & 16)
-		{
-			vertices[4] = VertexInterp(points[4], points[5], values[4], values[5]);
-			vertEnabled[4] = true;
-		}
-		if (edgeTable[cubeCase] & 32)
-		{
-			vertices[5] = VertexInterp(points[5], points[6], values[5], values[6]);
-			vertEnabled[5] = true;
-		}
-		if (edgeTable[cubeCase] & 64)
-		{
-			vertices[6] = VertexInterp(points[6], points[7], values[6], values[7]);
-			vertEnabled[6] = true;
-		}
-		if (edgeTable[cubeCase] & 128)
-		{
-			vertices[7] = VertexInterp(points[7], points[4], values[7], values[4]);
-			vertEnabled[7] = true;
-		}
-		if (edgeTable[cubeCase] & 256)
-		{
-			vertices[8] = VertexInterp(points[0], points[4], values[0], values[4]);
-			vertEnabled[8] = true;
-		}
-		if (edgeTable[cubeCase] & 512)
-		{
-			vertices[9] = VertexInterp(points[1], points[5], values[1], values[5]);
-			vertEnabled[9] = true;
-		}
-		if (edgeTable[cubeCase] & 1024)
-		{
-			vertices[10] = VertexInterp(points[2], points[6], values[2], values[6]);
-			vertEnabled[10] = true;
-		}
-		if (edgeTable[cubeCase] & 2048)
-		{
-			vertices[11] = VertexInterp(points[3], points[7], values[3], values[7]);
-			vertEnabled[11] = true;
-		}
-		
-		//append vertices to mesh
-		for (int i = 0; i < 12; i++) {
-			vertIDs[i] = -1;
-			if (vertEnabled[i]) {
-				vertIDs[i] = EditMesh->AppendVertex(FVector3d(vertices[i]));
 
+		for (int i = 0; i < 12; i++) {
+			if (edgeTable[cubeCase] & (1 << i)) {
+				edges[i] = pos + edgeOffsets[i];
+				vertEnabled[i] = true;
+			}
+		}	
+		//append vertices to mesh
+		for (int i0 = 0; i0 < 12; i0++) {
+			vertIDs[i0] = -1;
+			if (vertEnabled[i0]) {
+				//new method of checking if vertex exists for a given edge
+				int* existingID = existingEdges.Find(edges[i0]);
+				if (existingID != nullptr) {
+					vertIDs[i0] = *existingID;
+				}
+				else {
+					std::pair<int, int> vertexIndices = edgeVertices[i0];
+					int newID = EditMesh->AppendVertex(FVector3d(VertexInterp(points[vertexIndices.first],points[vertexIndices.second], values[vertexIndices.first], values[vertexIndices.second])));
+					vertIDs[i0] = newID;
+					existingEdges.Add(edges[i0], newID);
+				}
 			}
 		}
-
 		//append triangles to mesh
 		for (int i = 0; triTable[cubeCase][i] != -1; i += 3) {
 			EditMesh->AppendTriangle(vertIDs[triTable[cubeCase][i]], vertIDs[triTable[cubeCase][i + 2]], vertIDs[triTable[cubeCase][i + 1]]);
 		}
 
-	cubeSkip:
+	cubeSkip: //label for nested loop that needs to propagate to neighbours
 		//search all neighbouring positions that havent been visited yet
-		for (int i = pos.X-1; i < pos.X+2; i++) {
-			for (int j = pos.Y - 1; j < pos.Y + 2; j++) {
-				for (int k = pos.Z - 1; k < pos.Z + 2; k++) {
-					FIntVector3 newPos(i, j, k);
+		for (int i = -1; i < 2; i++) {
+			for (int j = -1; j < 2; j++) {
+				for (int k = -1; k < 2; k++) {
+					FIntVector3 newPos = pos + FIntVector3(i*2, j*2, k*2);
 					if (!visited.Contains(newPos)) {
 						frontier.Add(newPos);
 					}
 				}
 			}
 		}
-	cubeDiscard:;
+	cubeDiscard:;//label for nested loop that needs to NOT propagate to neighbours
 	}
 }
 
