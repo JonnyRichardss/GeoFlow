@@ -101,13 +101,9 @@ AddNodeArgs EnumToAddNodeArgs(EGeoFlowNodeType type)
 			TEXT("Primitive"),
 			TEXT("Box")
 		};
-	case EGeoFlowNodeType::PrimitivePlane:
-		return {
-			UGFN_E_PrimitivePlane::StaticClass(),
-			TEXT("Primitive"),
-			TEXT("Plane")
-		};
-		
+
+
+
 	case EGeoFlowNodeType::Smin:
 		return {
 			UGFN_E_Smin::StaticClass(),
@@ -176,6 +172,12 @@ AddNodeArgs EnumToAddNodeArgs(EGeoFlowNodeType type)
 			UGFN_E_BaseVector::StaticClass(),
 			TEXT("Base"),
 			TEXT("Vector")
+		};
+	case EGeoFlowNodeType::BasePrimitive:
+		return {
+			UGFN_E_BasePrimitive::StaticClass(),
+			TEXT("Base"),
+			TEXT("Primitive")
 		};
 	default:
 		check(false);

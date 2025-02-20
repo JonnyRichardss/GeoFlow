@@ -25,7 +25,6 @@ enum class EGeoFlowNodeType : int {
 	PrimitiveSphere,
 	PrimitiveEllipsoid,
 	PrimitiveBox,
-	PrimitivePlane,
 
 	Smin,
 	Smax,
@@ -40,6 +39,7 @@ enum class EGeoFlowNodeType : int {
 	BaseInt,
 	BaseFloat,
 	BaseVector,
+	BasePrimitive,
 };
 struct AddNodeArgs {
 	UClass* TemplateClass;

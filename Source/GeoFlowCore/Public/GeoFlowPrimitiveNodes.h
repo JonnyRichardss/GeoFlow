@@ -5,7 +5,28 @@
 #include "GeoFlowPrimitiveNodes.generated.h"
 
 UCLASS()
-class GEOFLOWCORE_API UGFN_E_PrimitiveSphere : public UGFN_E_BaseFloat {
+class GEOFLOWCORE_API UGFN_E_BasePrimitive : public UGFN_E_BaseFloat {
+	GENERATED_BODY()
+public:
+	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::BasePrimitive; }
+	virtual FText GetNodeTitle(ENodeTitleType::Type titleType) const override { return FText::FromString("Default Primitive node"); }
+	UEdGraphPin* PositionInput = nullptr;
+};
+UCLASS()
+class GEOFLOWCORE_API UGFN_R_BasePrimitive : public UGFN_R_BaseFloat {
+	GENERATED_BODY()
+public:
+	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::BasePrimitive; }
+
+	UPROPERTY()
+	UGeoFlowRuntimePin* PositionInput = nullptr;
+	UPROPERTY()
+	FVector3f position;
+
+	FVector3f GetPosition();
+};
+UCLASS()
+class GEOFLOWCORE_API UGFN_E_PrimitiveSphere : public UGFN_E_BasePrimitive {
 	GENERATED_BODY()
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::PrimitiveSphere; }
@@ -15,11 +36,10 @@ public:
 	virtual TArray<UEdGraphPin*> CreateInputPins(UEdGraphPin* fromPin) override;
 
 
-	UEdGraphPin* CentreInput = nullptr;
 	UEdGraphPin* RadiusInput = nullptr;
 };
 UCLASS()
-class GEOFLOWCORE_API UGFN_R_PrimitiveSphere : public UGFN_R_BaseFloat {
+class GEOFLOWCORE_API UGFN_R_PrimitiveSphere : public UGFN_R_BasePrimitive {
 	GENERATED_BODY()
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::PrimitiveSphere; }
@@ -27,11 +47,8 @@ public:
 	virtual UGFN_E_Base* CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UEdGraphPin*>& idToPinMap) override;
 
 	UPROPERTY()
-	UGeoFlowRuntimePin* CentreInput = nullptr;
-	UPROPERTY()
 	UGeoFlowRuntimePin* RadiusInput = nullptr;
-	UPROPERTY()
-	FVector3f centre;
+	
 	UPROPERTY()
 	float radius;
 	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override;
@@ -40,7 +57,7 @@ public:
 
 
 UCLASS()
-class GEOFLOWCORE_API UGFN_E_PrimitiveBox : public UGFN_E_BaseFloat {
+class GEOFLOWCORE_API UGFN_E_PrimitiveBox : public UGFN_E_BasePrimitive {
 	GENERATED_BODY()
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::PrimitiveBox; }
@@ -50,11 +67,10 @@ public:
 	virtual TArray<UEdGraphPin*> CreateInputPins(UEdGraphPin* fromPin) override;
 
 
-	UEdGraphPin* CentreInput = nullptr;
 	UEdGraphPin* RadiusInput = nullptr;
 };
 UCLASS()
-class GEOFLOWCORE_API UGFN_R_PrimitiveBox : public UGFN_R_BaseFloat {
+class GEOFLOWCORE_API UGFN_R_PrimitiveBox : public UGFN_R_BasePrimitive {
 	GENERATED_BODY()
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::PrimitiveBox; }
@@ -62,11 +78,7 @@ public:
 	virtual UGFN_E_Base* CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UEdGraphPin*>& idToPinMap) override;
 
 	UPROPERTY()
-	UGeoFlowRuntimePin* CentreInput = nullptr;
-	UPROPERTY()
 	UGeoFlowRuntimePin* RadiusInput = nullptr;
-	UPROPERTY()
-	FVector3f centre;
 	UPROPERTY()
 	FVector3f radius;
 	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override;
@@ -74,48 +86,8 @@ public:
 };
 
 
-
 UCLASS()
-class GEOFLOWCORE_API UGFN_E_PrimitivePlane : public UGFN_E_BaseFloat {
-	GENERATED_BODY()
-public:
-	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::PrimitivePlane; }
-	virtual FText GetNodeTitle(ENodeTitleType::Type titleType) const override { return FText::FromString("Plane Primitive"); }
-
-	virtual UGFN_R_Base* CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UGeoFlowRuntimePin*>& idToPinMap) override;
-	virtual TArray<UEdGraphPin*> CreateInputPins(UEdGraphPin* fromPin) override;
-
-
-	//since i got lazy copying these have the wrong names -- should be normal vector and offset
-	UEdGraphPin* NormalInput = nullptr;
-	UEdGraphPin* OffsetInput = nullptr;
-};
-UCLASS()
-class GEOFLOWCORE_API UGFN_R_PrimitivePlane : public UGFN_R_BaseFloat {
-	GENERATED_BODY()
-public:
-	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::PrimitivePlane; }
-
-	virtual UGFN_E_Base* CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UEdGraphPin*>& idToPinMap) override;
-
-	UPROPERTY()
-	UGeoFlowRuntimePin* NormalInput = nullptr;
-	UPROPERTY()
-	UGeoFlowRuntimePin* OffsetInput = nullptr;
-	UPROPERTY()
-	FVector3f normal;
-	UPROPERTY()
-	float offset;
-	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override;
-	virtual float Evaluate(const FVector3f& pos) override;
-};
-
-
-
-
-
-UCLASS()
-class GEOFLOWCORE_API UGFN_E_PrimitiveEllipsoid : public UGFN_E_BaseFloat {
+class GEOFLOWCORE_API UGFN_E_PrimitiveEllipsoid : public UGFN_E_BasePrimitive {
 	GENERATED_BODY()
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::PrimitiveEllipsoid; }
@@ -124,12 +96,10 @@ public:
 	virtual UGFN_R_Base* CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UGeoFlowRuntimePin*>& idToPinMap) override;
 	virtual TArray<UEdGraphPin*> CreateInputPins(UEdGraphPin* fromPin) override;
 
-
-	UEdGraphPin* CentreInput = nullptr;
 	UEdGraphPin* RadiusInput = nullptr;
 };
 UCLASS()
-class GEOFLOWCORE_API UGFN_R_PrimitiveEllipsoid : public UGFN_R_BaseFloat {
+class GEOFLOWCORE_API UGFN_R_PrimitiveEllipsoid : public UGFN_R_BasePrimitive {
 	GENERATED_BODY()
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::PrimitiveEllipsoid; }
@@ -137,11 +107,7 @@ public:
 	virtual UGFN_E_Base* CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UEdGraphPin*>& idToPinMap) override;
 
 	UPROPERTY()
-	UGeoFlowRuntimePin* CentreInput = nullptr;
-	UPROPERTY()
 	UGeoFlowRuntimePin* RadiusInput = nullptr;
-	UPROPERTY()
-	FVector3f centre;
 	UPROPERTY()
 	FVector3f radius;
 	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override;

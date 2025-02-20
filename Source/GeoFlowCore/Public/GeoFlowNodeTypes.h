@@ -129,7 +129,7 @@ class GEOFLOWCORE_API UGFN_R_Base : public UObject {
 	GENERATED_BODY()
 public:
 	UPROPERTY()
-	FVector2D Position;
+	FVector2D NodePosition;
 	virtual EGeoFlowReturnType NodeReturnType() const { return EGeoFlowReturnType::None; }
 	virtual EGeoFlowNodeType NodeType() const { return EGeoFlowNodeType::Base; }
 
@@ -192,8 +192,8 @@ inline T* UGFN_R_Base::InitUiNode(UEdGraph* _workingGraph)
 {
 	T* newNode = NewObject<T>(_workingGraph);
 	newNode->CreateNewGuid();
-	newNode->NodePosX = Position.X;
-	newNode->NodePosY = Position.Y;
+	newNode->NodePosX = NodePosition.X;
+	newNode->NodePosY = NodePosition.Y;
 	return newNode;
 }
 
@@ -201,6 +201,6 @@ template<typename T>
 inline T* UGFN_E_Base::InitRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph)
 {
 	T* runtimeNode = NewObject<T>(runtimeGraph);
-	runtimeNode->Position = FVector2D(NodePosX, NodePosY);
+	runtimeNode->NodePosition = FVector2D(NodePosX, NodePosY);
 	return runtimeNode;
 }
