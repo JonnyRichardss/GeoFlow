@@ -38,7 +38,6 @@ public:
 	float b;
 	UPROPERTY()
 	float smoothing;
-	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override;
 	virtual float Evaluate(const FVector3f& pos) override;
 };
 
@@ -78,7 +77,6 @@ public:
 	float b;
 	UPROPERTY()
 	float smoothing;
-	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override;
 	virtual float Evaluate(const FVector3f& pos) override;
 };
 
@@ -116,7 +114,6 @@ public:
 	float a;
 	UPROPERTY()
 	float b;
-	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override;
 	virtual float Evaluate(const FVector3f& pos) override;
 };
 
@@ -154,6 +151,5 @@ public:
 	float a;
 	UPROPERTY()
 	float b;
-	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override;
 	virtual float Evaluate(const FVector3f& pos) override;
 };

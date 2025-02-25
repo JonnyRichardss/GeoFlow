@@ -37,6 +37,9 @@ UGeoFlowRuntimePin* UGFN_E_Base::InitRuntimePin(UGFN_R_Base* runtimeNode, UEdGra
 	}
 	idToPinMap.Add(UiPin->PinId, runtimePin);
 	runtimePin->OwningNode = runtimeNode;
+	if (UiPin->Direction == EEdGraphPinDirection::EGPD_Input) {
+		runtimeNode->InputPins.Add(runtimePin);
+	}
 	return runtimePin;
 }
 UEdGraphPin* UGFN_E_Base::CreateCustomPin(EEdGraphPinDirection direction, FName name, EGeoFlowReturnType ConnectionType)
@@ -100,9 +103,6 @@ UGFN_R_Base* UGFN_E_Output::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph
 	UGFN_R_Output* runtimeNode = InitRuntimeNode<UGFN_R_Output>(runtimeGraph);
 	for (UEdGraphPin* uiPin : Pins) {
 		UGeoFlowRuntimePin* runtimePin = InitRuntimePin(runtimeNode,uiPin,connections,idToPinMap,EGeoFlowReturnType::Float);
-		if (uiPin->Direction == EEdGraphPinDirection::EGPD_Input) {
-			runtimeNode->InputPins.Add(runtimePin);
-		}
 	}
 	return runtimeNode;
 }
@@ -135,50 +135,6 @@ float UGFN_R_Output::Evaluate(const FVector3f& pos)
 			output = num;
 		}
 	}
-	return output;
-}
-
-FString UGFN_R_Output::CreateShaderEvalCall(TArray<FString>& PinDeclarations)
-{
-	FString output;
-	
-	TArray<FString> PinVars;
-	for (UGeoFlowRuntimePin* pin : InputPins) {
-		//assuming 1-1 connection on these pins
-		if (pin->Connection != nullptr) {
-			UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(pin->Connection->OwningNode);
-			//if cast succeeded -- i think this check is technically redundant due to the schema but better safe than crashing
-			if (node != nullptr) {
-				//add node as a variable
-				//add code to choose min of vars
-				FString pinVar;
-				pinVar.Appendf(TEXT("PIN_%s"), *(pin->PinId.ToString(EGuidFormats::DigitsLower)));
-				PinVars.Add(pinVar);
-				PinDeclarations.Add(FString::Printf(TEXT("float %s = %s;\n"),*pinVar, *(node->CreateShaderEvalCall(PinDeclarations))));
-			}
-		}
-	}
-	//special cases for 0, 1 connections
-	//after that just max the numbers LOL
-	int intNumber = 0;
-	do {
-		if (PinVars.Num() == 0) {
-			output.Appendf(TEXT("return FLT_MAX;"));
-		}
-		else if (PinVars.Num() == 1) {
-			FString OurVar = PinVars.Pop(EAllowShrinking::No);
-			output.Appendf(TEXT("return %s;\n"), *OurVar);
-		}
-		else{
-			FString NewVar;
-			FString OurVarA = PinVars.Pop(EAllowShrinking::No);
-			FString OurVarB = PinVars.Pop(EAllowShrinking::No);
-			NewVar.Appendf(TEXT("Intermediate_%i"), intNumber++);
-			output.Appendf(TEXT("float %s = min(%s, %s);\n"), *NewVar, *OurVarA, *OurVarB);
-			PinVars.Insert(NewVar, 0);
-		}
-	} while (PinVars.Num() > 0);
-
 	return output;
 }
 

@@ -9,7 +9,9 @@ AGeoFlowActor::AGeoFlowActor()
 
 void AGeoFlowActor::OnConstruction(const FTransform& Transform)
 {
-	GeoFlow->Regen();
+	if (GeoFlow->AutoUpdate) {
+		GeoFlow->Regen();
+	}
 }
 
 void AGeoFlowActor::BeginPlay()

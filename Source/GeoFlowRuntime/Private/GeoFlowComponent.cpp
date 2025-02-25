@@ -15,10 +15,8 @@ UGeoFlowComponent::~UGeoFlowComponent()
 void UGeoFlowComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
+	if (!AutoUpdate) return;
 	if (PropertyChangedEvent.GetPropertyName() == GET_MEMBER_NAME_CHECKED(UGeoFlowComponent, geo)) {
-		ForceRegen();
-	}
-	else if (PropertyChangedEvent.GetMemberPropertyName() == GET_MEMBER_NAME_CHECKED(UGeoFlowComponent, GenSettings)) {
 		ForceRegen();
 	}
 }

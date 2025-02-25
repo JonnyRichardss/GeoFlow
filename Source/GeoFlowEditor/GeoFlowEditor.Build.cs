@@ -38,7 +38,8 @@ public class GeoFlowEditor : ModuleRules
                 "Projects",
                 "ToolMenus",
                 "GraphEditor",
-				"InputCore"
+				"InputCore",
+                "AdvancedPreviewScene"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

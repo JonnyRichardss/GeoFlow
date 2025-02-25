@@ -24,7 +24,11 @@ enum class EGeoFlowNodeType : int {
 
 	PrimitiveSphere,
 	PrimitiveEllipsoid,
+	PrimitiveCube,
 	PrimitiveBox,
+	PrimitiveCone,
+	PrimitiveCylinder,
+
 
 	Smin,
 	Smax,

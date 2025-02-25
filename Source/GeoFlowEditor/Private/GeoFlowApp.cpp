@@ -1,12 +1,15 @@
 #include "GeoFlowApp.h"
 #include "GeoFlowTabFactories.h"
 #include "GeoFlowAssetActions.h"
+#include "AdvancedPreviewSceneModule.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "GeoFlowGraphSchema.h"
 #include "GeoFlowRuntimeGraph.h"
 #include "GeoFlowNodeTypes.h"
 #include "GeoFlowAsset.h"
 #include "Framework/Commands/GenericCommands.h"
+#include "GeoFlowViewport.h"
+
 
 void GeoFlowEditorApp::RegisterTabSpawners(const TSharedRef<class FTabManager>& tabManager)
 {
@@ -37,13 +40,28 @@ void GeoFlowEditorApp::InitEditor(const EToolkitMode::Type mode, const TSharedPt
 		true, //createDefaultToolbar
 		objects
 	);
+
 	AddApplicationMode(TEXT("GeoFlowEditorAppMode"), MakeShareable(new GeoFlowAppMode(SharedThis(this))));
 	SetCurrentMode(TEXT("GeoFlowEditorAppMode"));
 
 	UpdateEditorGraphFromWorkingAsset();
 	_graphChangeListenerHandle = _workingGraph->AddOnGraphChangedHandler(FOnGraphChanged::FDelegate::CreateSP(this,&GeoFlowEditorApp::OnGraphChanged));
+	GenerateDelegate = FOnClicked::CreateSP(this, &GeoFlowEditorApp::OnGenerateClicked);
+	FCoreDelegates::OnPreExit.AddLambda([this]()
+		{
+			if (!ViewportWidget.IsValid())
+				return;
 
+			ViewportWidget->PreviewScene.Reset();
+			ViewportWidget->ViewportClient.Reset();
+			ViewportWidget.Reset();
+		});
 	
+	FAdvancedPreviewSceneModule& AdvancedPreviewSceneModule = FModuleManager::LoadModuleChecked<FAdvancedPreviewSceneModule>("AdvancedPreviewScene");
+	TSharedRef<SWidget> PreviewDetails = AdvancedPreviewSceneModule.CreateAdvancedPreviewSceneSettingsWidget(ViewportWidget->PreviewScene.ToSharedRef());
+
+	ViewportClient = ViewportWidget->GetViewportClient().ToSharedRef();
+	ViewportClient->SetAsset(_workingAsset);
 }
 
 void GeoFlowEditorApp::SetSelectedNodeDetailView(TSharedPtr<class IDetailsView> detailsView)
@@ -64,6 +82,12 @@ void GeoFlowEditorApp::OnGraphSelectionChanged(const FGraphPanelSelectionSet& se
 		}
 	}
 	_selectedNodeDetailsView->SetObject(nullptr);
+}
+
+FReply GeoFlowEditorApp::OnGenerateClicked()
+{
+	ViewportClient->Generate();
+	return FReply::Handled();
 }
 
 void GeoFlowEditorApp::OnClose()
@@ -145,8 +169,9 @@ GeoFlowAppMode::GeoFlowAppMode(TSharedPtr<class GeoFlowEditorApp> app) : FApplic
 	_app = app;
 	_tabs.RegisterFactory(MakeShareable(new GeoFlowPrimaryTabFactory(app)));
 	_tabs.RegisterFactory(MakeShareable(new GeoFlowPropertiesTabFactory(app)));
+	_tabs.RegisterFactory(MakeShareable(new GeoFlowPreviewTabFactory(app)));
 
-	TabLayout = FTabManager::NewLayout("GeoFlowLayout_TestVersion_2")
+	TabLayout = FTabManager::NewLayout("GeoFlowLayout_TestVersion_3")
 		->AddArea(
 			FTabManager::NewPrimaryArea()->SetOrientation(Orient_Vertical)
 			->Split(
@@ -158,9 +183,19 @@ GeoFlowAppMode::GeoFlowAppMode(TSharedPtr<class GeoFlowEditorApp> app) : FApplic
 					->AddTab(FName(TEXT("GeoFlowPrimaryTab")), ETabState::OpenedTab)
 				)
 				->Split(
-					FTabManager::NewStack()
+					FTabManager::NewSplitter()
 					->SetSizeCoefficient(0.3)
-					->AddTab(FName(TEXT("GeoFlowPropertiesTab")), ETabState::OpenedTab)
+					->Split(
+						FTabManager::NewStack()
+						->SetSizeCoefficient(0.4)
+						-> AddTab(FName(TEXT("GeoFlowPreviewTab")), ETabState::OpenedTab)
+					)
+					->Split(
+						FTabManager::NewStack()
+						->SetSizeCoefficient(0.6)
+						->AddTab(FName(TEXT("GeoFlowPropertiesTab")), ETabState::OpenedTab)
+					)
+
 				)
 			)
 		);

@@ -11,6 +11,7 @@ public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::BasePrimitive; }
 	virtual FText GetNodeTitle(ENodeTitleType::Type titleType) const override { return FText::FromString("Default Primitive node"); }
 	UEdGraphPin* PositionInput = nullptr;
+	UEdGraphPin* RotationInput = nullptr;
 };
 UCLASS()
 class GEOFLOWCORE_API UGFN_R_BasePrimitive : public UGFN_R_BaseFloat {
@@ -21,7 +22,11 @@ public:
 	UPROPERTY()
 	UGeoFlowRuntimePin* PositionInput = nullptr;
 	UPROPERTY()
+	UGeoFlowRuntimePin* RotationInput = nullptr;
+	UPROPERTY()
 	FVector3f position;
+	UPROPERTY()
+	FVector3f rotation;
 
 	FVector3f GetPosition();
 };
@@ -51,7 +56,34 @@ public:
 	
 	UPROPERTY()
 	float radius;
-	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override;
+	virtual float Evaluate(const FVector3f& pos) override;
+};
+
+UCLASS()
+class GEOFLOWCORE_API UGFN_E_PrimitiveCube : public UGFN_E_BasePrimitive {
+	GENERATED_BODY()
+public:
+	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::PrimitiveCube; }
+	virtual FText GetNodeTitle(ENodeTitleType::Type titleType) const override { return FText::FromString("Cube Primitive"); }
+
+	virtual UGFN_R_Base* CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UGeoFlowRuntimePin*>& idToPinMap) override;
+	virtual TArray<UEdGraphPin*> CreateInputPins(UEdGraphPin* fromPin) override;
+
+
+	UEdGraphPin* RadiusInput = nullptr;
+};
+UCLASS()
+class GEOFLOWCORE_API UGFN_R_PrimitiveCube : public UGFN_R_BasePrimitive {
+	GENERATED_BODY()
+public:
+	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::PrimitiveCube; }
+
+	virtual UGFN_E_Base* CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UEdGraphPin*>& idToPinMap) override;
+
+	UPROPERTY()
+	UGeoFlowRuntimePin* RadiusInput = nullptr;
+	UPROPERTY()
+	float radius;
 	virtual float Evaluate(const FVector3f& pos) override;
 };
 
@@ -81,7 +113,6 @@ public:
 	UGeoFlowRuntimePin* RadiusInput = nullptr;
 	UPROPERTY()
 	FVector3f radius;
-	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override;
 	virtual float Evaluate(const FVector3f& pos) override;
 };
 
@@ -110,6 +141,73 @@ public:
 	UGeoFlowRuntimePin* RadiusInput = nullptr;
 	UPROPERTY()
 	FVector3f radius;
-	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override;
+	virtual float Evaluate(const FVector3f& pos) override;
+};
+
+UCLASS()
+class GEOFLOWCORE_API UGFN_E_PrimitiveCone : public UGFN_E_BasePrimitive {
+	GENERATED_BODY()
+public:
+	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::PrimitiveCone; }
+	virtual FText GetNodeTitle(ENodeTitleType::Type titleType) const override { return FText::FromString("Cone Primitive"); }
+
+	virtual UGFN_R_Base* CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UGeoFlowRuntimePin*>& idToPinMap) override;
+	virtual TArray<UEdGraphPin*> CreateInputPins(UEdGraphPin* fromPin) override;
+
+
+	UEdGraphPin* AngleInput = nullptr;
+	UEdGraphPin* HeightInput = nullptr;
+};
+UCLASS()
+class GEOFLOWCORE_API UGFN_R_PrimitiveCone : public UGFN_R_BasePrimitive {
+	GENERATED_BODY()
+public:
+	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::PrimitiveCone; }
+
+	virtual UGFN_E_Base* CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UEdGraphPin*>& idToPinMap) override;
+
+	UPROPERTY()
+	UGeoFlowRuntimePin* AngleInput = nullptr;
+	UPROPERTY()
+	UGeoFlowRuntimePin* HeightInput = nullptr;
+
+	UPROPERTY()
+	float angle;
+	UPROPERTY()
+	float height;
+	virtual float Evaluate(const FVector3f& pos) override;
+};
+
+UCLASS()
+class GEOFLOWCORE_API UGFN_E_PrimitiveCylinder : public UGFN_E_BasePrimitive {
+	GENERATED_BODY()
+public:
+	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::PrimitiveCylinder; }
+	virtual FText GetNodeTitle(ENodeTitleType::Type titleType) const override { return FText::FromString("Cylinder Primitive"); }
+
+	virtual UGFN_R_Base* CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UGeoFlowRuntimePin*>& idToPinMap) override;
+	virtual TArray<UEdGraphPin*> CreateInputPins(UEdGraphPin* fromPin) override;
+
+
+	UEdGraphPin* RadiusInput = nullptr;
+	UEdGraphPin* HeightInput = nullptr;
+};
+UCLASS()
+class GEOFLOWCORE_API UGFN_R_PrimitiveCylinder : public UGFN_R_BasePrimitive {
+	GENERATED_BODY()
+public:
+	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::PrimitiveCylinder; }
+
+	virtual UGFN_E_Base* CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UEdGraphPin*>& idToPinMap) override;
+
+	UPROPERTY()
+	UGeoFlowRuntimePin* RadiusInput = nullptr;
+	UPROPERTY()
+	UGeoFlowRuntimePin* HeightInput = nullptr;
+
+	UPROPERTY()
+	float radius;
+	UPROPERTY()
+	float height;
 	virtual float Evaluate(const FVector3f& pos) override;
 };

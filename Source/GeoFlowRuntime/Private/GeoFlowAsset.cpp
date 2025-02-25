@@ -16,7 +16,7 @@ DECLARE_DWORD_ACCUMULATOR_STAT(TEXT("JR_LastSamplesInsideObject"),JR_EVAL_SUCCES
 DECLARE_DWORD_ACCUMULATOR_STAT(TEXT("JR_LastCubesMarched"),JR_TOTAL_CUBES,STATGROUP_JR)
 //#include "IcosphereGenerator.h"
 ;
-void UGeoFlowAsset::Generate(UGeoFlowComponent* parent)
+void UGeoFlowAsset::Generate(UDynamicMeshComponent* parent)
 {
 	//TODO - pass Marching cubes settings thru from the component
 	if (parent == nullptr) {
@@ -34,26 +34,41 @@ void UGeoFlowAsset::Generate(UGeoFlowComponent* parent)
 	for (UGFN_R_Base* node : Graph->Nodes) {
 		if (node->NodeType() == EGeoFlowNodeType::Output) {
 			_outputNode = Cast<UGFN_R_Output>(node);
+			break;
 		}
-		//cant check node type as its overwritten on derived
-		UGFN_R_BasePrimitive* primitive = Cast<UGFN_R_BasePrimitive>(node);
-		if (IsValid(primitive)) {
-			PrimitivePositions.Add(primitive->GetPosition());
+	}
+	TArray<UGFN_R_Base*> frontier;
+	TArray<UGFN_R_Base*> visited;
+	for (UGeoFlowRuntimePin* pin : _outputNode->InputPins) {
+		if (pin->Connection != nullptr) {
+			frontier.Add(pin->Connection->OwningNode);
+		}
+	}
+	while (!frontier.IsEmpty()) {
+		UGFN_R_Base* baseNode = frontier.Pop();
+		visited.Add(baseNode);
+		for (UGeoFlowRuntimePin* pin : baseNode->InputPins) {
+			if (pin->Connection != nullptr) {
+				frontier.Add(pin->Connection->OwningNode);
+			}
+		}
+		UGFN_R_BasePrimitive* primitiveNode = Cast<UGFN_R_BasePrimitive>(baseNode);
+		if (primitiveNode != nullptr) {
+			PrimitivePositions.Add(primitiveNode->GetPosition());
 		}
 	}
 	TArray<FIntVector3> primitiveOffsets;
-	FVector3f averagePos(0.0f,0.0f,0.0f);
-	for (FVector3f position : PrimitivePositions) {
-		averagePos += position;
-	}
-	averagePos /= (float)PrimitivePositions.Num();
 
 	for (FVector3f position : PrimitivePositions) {
-		FVector3f offset = position - averagePos;
-		offset /= parent->GenSettings.stepSize;
-		primitiveOffsets.Emplace(FIntVector3(FMath::RoundToInt(offset.X), FMath::RoundToInt(offset.Y), FMath::RoundToInt(offset.Z)));
+		FVector3f offset = position;
+		//must snap to double step width otherwise different (connected) prims can generate at 1 step width offset from each other causing geometry to be doubled
+		offset /= Settings.stepSize * 2;
+		FIntVector3 intOffset(FMath::RoundToInt(offset.X), FMath::RoundToInt(offset.Y), FMath::RoundToInt(offset.Z));
+		intOffset *= 2;
+		primitiveOffsets.Add(intOffset);
+
 	}
-	DoMarchingCubes(EditMesh, parent->GenSettings, averagePos,primitiveOffsets);
+	DoMarchingCubes(EditMesh, parent,primitiveOffsets);
 
 	//compute normals -- the builtin calculation from faces seems better than my not-quite-a-derivative method
 	if (!EditMesh->HasAttributes()) EditMesh->EnableAttributes();
@@ -131,7 +146,8 @@ bool UGeoFlowAsset::NeedsResave()
 static FIntVector3 cornerOffsets[8] = { {-1,-1,-1},{-1,1,-1},{1,1,-1},{1,-1,-1},{-1,-1,1},{-1,1,1},{1,1,1},{1,-1,1} };
 static FIntVector3 edgeOffsets[12] = { {-1,0,-1},{0,1,-1},{1,0,-1},{0,-1,-1},{-1,0,1},{0,1,1},{1,0,1},{0,-1,1},{-1,-1,0},{-1,1,0},{1,1,0},{1,-1,0} };
 static std::pair<int, int> edgeVertices[12] = { {0,1},{1,2},{2,3},{3,0},{4,5},{5,6},{6,7},{7,4},{0,4},{1,5},{2,6},{3,7} };
-void UGeoFlowAsset::DoMarchingCubes(UE::Geometry::FDynamicMesh3* EditMesh, const FGeoFlowGenerationSettings& settings, FVector3f objectCentre,TArray<FIntVector3> primitiveOffsets)
+static FIntVector3 OrthoOffsets[6] = { {2,0,0},{-2,0,0},{0,2,0},{0,-2,0},{0,0,2},{0,0,-2} };
+void UGeoFlowAsset::DoMarchingCubes(UE::Geometry::FDynamicMesh3* EditMesh, UDynamicMeshComponent* parent,TArray<FIntVector3> primitiveOffsets)
 {
 
 	DECLARE_SCOPE_CYCLE_COUNTER(TEXT("MarchingCubes"), JR_MARCHINGCUBES_FULL, STATGROUP_JR)
@@ -139,11 +155,14 @@ void UGeoFlowAsset::DoMarchingCubes(UE::Geometry::FDynamicMesh3* EditMesh, const
 	SET_DWORD_STAT(JR_EVAL_SUCCESSES, 0)
 	SET_DWORD_STAT(JR_TOTAL_CUBES, 0)
 
-	auto stepSize = settings.stepSize;
+	auto stepSize =Settings.stepSize;
 
 	double cubeDiagonalSize = FMath::Sqrt(3 * (2 * stepSize) * (2 * stepSize));
 	TArray<FIntVector3> frontier;
-	TArray<FIntVector3> visited;
+
+	//TArray<FIntVector3> visited;
+	TSet<FIntVector> visited;
+
 	TMap<FIntVector3, int> existingEdges;
 
 	frontier.Append(primitiveOffsets); //start at centre of all primitives
@@ -156,9 +175,9 @@ void UGeoFlowAsset::DoMarchingCubes(UE::Geometry::FDynamicMesh3* EditMesh, const
 
 		visited.Add(pos);
 
-		double x = (objectCentre.X) + (pos.X *(stepSize));
-		double y = (objectCentre.Y) + (pos.Y *(stepSize));
-		double z = (objectCentre.Z) + (pos.Z *(stepSize));
+		double x = (pos.X *(stepSize));
+		double y = (pos.Y *(stepSize));
+		double z = (pos.Z *(stepSize));
 
 		FVector3f points[8];
 		float values[8];
@@ -168,6 +187,7 @@ void UGeoFlowAsset::DoMarchingCubes(UE::Geometry::FDynamicMesh3* EditMesh, const
 		int vertIDs[12];
 
 		for (int idx = 0; idx < 8; idx++) {
+			DECLARE_SCOPE_CYCLE_COUNTER(TEXT("Construct Points"), JR_MARCHINGCUBES_POINTSCONSTRUCT, STATGROUP_JR)
 			int j = cornerOffsets[idx].X;
 			int k = cornerOffsets[idx].Y;
 			int l = cornerOffsets[idx].Z;
@@ -177,10 +197,16 @@ void UGeoFlowAsset::DoMarchingCubes(UE::Geometry::FDynamicMesh3* EditMesh, const
 		}
 		//get all points
 		for (int idx = 0; idx < 8; idx++) {
+			DECLARE_SCOPE_CYCLE_COUNTER(TEXT("Sample Loop"), JR_MARCHINGCUBES_SAMPLE, STATGROUP_JR)
 			float sample = SampleSDF(points[idx]);
 			if (FMath::IsNaN(sample)) goto cubeDiscard; //if we hit NaN something has gone very wrong
 			//nested-loop means goto is needed to continue twice
 			if (sample > cubeDiagonalSize) {
+				if (Settings.debug) {
+					DECLARE_SCOPE_CYCLE_COUNTER(TEXT("Marching Cubes draw debug"), JR_MARCHINGCUBES_DBG, STATGROUP_JR)
+					DrawDebugBox(parent->GetWorld(), FVector(x, y, z), FVector(stepSize),FColor::Red, false, 5.0f);
+					DrawDebugSphere(parent->GetWorld(), FVector(x, y, z),.1,6,FColor::Yellow, false, 5.0f);
+				}
 				goto cubeDiscard; //cubes OUTSIDE the primitive don't propagate
 			}
 			else if (sample < (0.0 - cubeDiagonalSize)) {
@@ -209,37 +235,48 @@ void UGeoFlowAsset::DoMarchingCubes(UE::Geometry::FDynamicMesh3* EditMesh, const
 		}	
 		//append vertices to mesh
 		for (int i0 = 0; i0 < 12; i0++) {
+			DECLARE_SCOPE_CYCLE_COUNTER(TEXT("Add Vertices"), JR_MARCHINGCUBES_VERTS, STATGROUP_JR)
 			vertIDs[i0] = -1;
-			if (vertEnabled[i0]) {
+			if (!vertEnabled[i0]) continue;
+
+			if (Settings.ReuseVertices) {
 				//new method of checking if vertex exists for a given edge
 				int* existingID = existingEdges.Find(edges[i0]);
 				if (existingID != nullptr) {
 					vertIDs[i0] = *existingID;
-				}
-				else {
-					std::pair<int, int> vertexIndices = edgeVertices[i0];
-					int newID = EditMesh->AppendVertex(FVector3d(VertexInterp(points[vertexIndices.first],points[vertexIndices.second], values[vertexIndices.first], values[vertexIndices.second])));
-					vertIDs[i0] = newID;
-					existingEdges.Add(edges[i0], newID);
+					continue;
 				}
 			}
+
+			std::pair<int, int> vertexIndices = edgeVertices[i0];
+			int newID = EditMesh->AppendVertex(FVector3d(VertexInterp(points[vertexIndices.first],points[vertexIndices.second], values[vertexIndices.first], values[vertexIndices.second])));
+			vertIDs[i0] = newID;
+			existingEdges.Add(edges[i0], newID);
+				
+			
 		}
 		//append triangles to mesh
 		for (int i = 0; triTable[cubeCase][i] != -1; i += 3) {
+			DECLARE_SCOPE_CYCLE_COUNTER(TEXT("Add Triangles"), JR_MARCHINGCUBES_Tris, STATGROUP_JR)
 			EditMesh->AppendTriangle(vertIDs[triTable[cubeCase][i]], vertIDs[triTable[cubeCase][i + 2]], vertIDs[triTable[cubeCase][i + 1]]);
 		}
 
 	cubeSkip: //label for nested loop that needs to propagate to neighbours
-		//search all neighbouring positions that havent been visited yet
-		for (int i = -1; i < 2; i++) {
-			for (int j = -1; j < 2; j++) {
-				for (int k = -1; k < 2; k++) {
-					FIntVector3 newPos = pos + FIntVector3(i*2, j*2, k*2);
-					if (!visited.Contains(newPos)) {
-						frontier.Add(newPos);
-					}
+		{
+			DECLARE_SCOPE_CYCLE_COUNTER(TEXT("Add new positions"), JR_MARCHINGCUBES_ADDPOSITIONS, STATGROUP_JR)
+			//search all neighbouring positions that havent been visited yet
+			for (FIntVector3 offset : OrthoOffsets) {
+				FIntVector3 newPos = pos + offset;
+				bool add = true;
+				{
+					DECLARE_SCOPE_CYCLE_COUNTER(TEXT("Check position visited"), JR_MARCHINGCUBES_CHECKVISITED, STATGROUP_JR)
+					add = !visited.Contains(newPos);
+				}
+				if (add) {
+					frontier.Add(newPos);
 				}
 			}
+
 		}
 	cubeDiscard:;//label for nested loop that needs to NOT propagate to neighbours
 	}
@@ -264,15 +301,5 @@ FVector3f UGeoFlowAsset::VertexInterp(FVector3f aPos, FVector3f bPos, float aVal
 	return FMath::Lerp(aPos, bPos, frac);
 }
 
-FString UGeoFlowAsset::MakeShaderSource()
-{
-	FString Output;
-	TArray<FString> PinDeclarations;
-	FString endingCode = _outputNode->CreateShaderEvalCall(PinDeclarations);
-	for (FString& dec : PinDeclarations) {
-		Output.Append(dec);
-	}
-	Output.Append(endingCode);
-	return Output;
-}
+
 

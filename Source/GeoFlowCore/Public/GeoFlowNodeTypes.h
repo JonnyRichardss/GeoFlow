@@ -137,7 +137,8 @@ public:
 	UEdGraphPin* InitUiPin(UGFN_E_Base* newNode, UGeoFlowRuntimePin* runtimePin, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UEdGraphPin*>& idToPinMap);
 	template<typename T>
 	T* InitUiNode(UEdGraph* _workingGraph);
-	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) { return FString(); }
+	UPROPERTY()
+	TArray<UGeoFlowRuntimePin*> InputPins;
 	UPROPERTY()
 	UGeoFlowRuntimePin* Output = nullptr;
 };
@@ -150,9 +151,7 @@ public:
 
 	virtual UGFN_E_Base* CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UEdGraphPin*>& idToPinMap);
 	virtual float Evaluate(const FVector3f& pos);
-	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override;
-	UPROPERTY()
-	TArray<UGeoFlowRuntimePin*> InputPins;
+	
 };
 UCLASS()
 class GEOFLOWCORE_API UGFN_R_BaseBool : public UGFN_R_Base {

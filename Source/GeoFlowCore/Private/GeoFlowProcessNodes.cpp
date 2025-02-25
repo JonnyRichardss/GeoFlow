@@ -58,47 +58,21 @@ UGFN_E_Base* UGFN_R_Smin::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::
 	return newNode;
 }
 
-FString UGFN_R_Smin::CreateShaderEvalCall(TArray<FString>& PinDeclarations)
-{
-	FString AVal;
-	FString BVal;
-	FString SVal;
-	if (InputA->Connection != nullptr) {
-		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputA->Connection->OwningNode);
-		AVal.Appendf(TEXT("PIN_%s"), *(InputA->PinId.ToString(EGuidFormats::DigitsLower)));
-		PinDeclarations.Add(FString::Printf(TEXT("float %s = %s;\n"), *AVal, *(node->CreateShaderEvalCall(PinDeclarations))));
-	}
-	else {
-		AVal.Appendf(TEXT("%f"), a);
-	}
-	if (InputB->Connection != nullptr) {
-		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputB->Connection->OwningNode);
-		BVal.Appendf(TEXT("PIN_%s"), *(InputB->PinId.ToString(EGuidFormats::DigitsLower)));
-		PinDeclarations.Add(FString::Printf(TEXT("float %s = %s;\n"), *BVal, *(node->CreateShaderEvalCall(PinDeclarations))));
-	}
-	else {
-		BVal.Appendf(TEXT("%f"), b);
-	}
-	if (InputSmoothing->Connection != nullptr) {
-		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputSmoothing->Connection->OwningNode);
-		SVal.Appendf(TEXT("PIN_%s"), *(InputSmoothing->PinId.ToString(EGuidFormats::DigitsLower)));
-		PinDeclarations.Add(FString::Printf(TEXT("float %s = %s;\n"), *SVal, *(node->CreateShaderEvalCall(PinDeclarations))));
-	}
-	else {
-		SVal.Appendf(TEXT("%f"), smoothing);
-	}
-	return FString::Printf(TEXT("Smin(%s,%s,%s)"), *AVal, *BVal,*SVal);
-}
-
 float UGFN_R_Smin::Evaluate(const FVector3f& pos)
 {
 	if (InputA->Connection != nullptr) {
 		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputA->Connection->OwningNode);
 		a = node->Evaluate(pos);
 	}
-	if (InputA->Connection != nullptr) {
+	else {
+		a = FLT_MAX;
+	}
+	if (InputB->Connection != nullptr) {
 		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputB->Connection->OwningNode);
 		b = node->Evaluate(pos);
+	}
+	else {
+		b = FLT_MAX;
 	}
 	if (InputSmoothing->Connection != nullptr) {
 		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputSmoothing->Connection->OwningNode);
@@ -166,47 +140,21 @@ UGFN_E_Base* UGFN_R_Smax::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::
 	return newNode;
 }
 
-FString UGFN_R_Smax::CreateShaderEvalCall(TArray<FString>& PinDeclarations)
-{
-	FString AVal;
-	FString BVal;
-	FString SVal;
-	if (InputA->Connection != nullptr) {
-		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputA->Connection->OwningNode);
-		AVal.Appendf(TEXT("PIN_%s"), *(InputA->PinId.ToString(EGuidFormats::DigitsLower)));
-		PinDeclarations.Add(FString::Printf(TEXT("float %s = %s;\n"), *AVal, *(node->CreateShaderEvalCall(PinDeclarations))));
-	}
-	else {
-		AVal.Appendf(TEXT("%f"), a);
-	}
-	if (InputB->Connection != nullptr) {
-		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputB->Connection->OwningNode);
-		BVal.Appendf(TEXT("PIN_%s"), *(InputB->PinId.ToString(EGuidFormats::DigitsLower)));
-		PinDeclarations.Add(FString::Printf(TEXT("float %s = %s;\n"), *BVal, *(node->CreateShaderEvalCall(PinDeclarations))));
-	}
-	else {
-		BVal.Appendf(TEXT("%f"), b);
-	}
-	if (InputSmoothing->Connection != nullptr) {
-		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputSmoothing->Connection->OwningNode);
-		SVal.Appendf(TEXT("PIN_%s"), *(InputSmoothing->PinId.ToString(EGuidFormats::DigitsLower)));
-		PinDeclarations.Add(FString::Printf(TEXT("float %s = %s;\n"), *SVal, *(node->CreateShaderEvalCall(PinDeclarations))));
-	}
-	else {
-		SVal.Appendf(TEXT("%f"), smoothing);
-	}
-	return FString::Printf(TEXT("Smax(%s,%s,%s)"), *AVal, *BVal, *SVal);
-}
-
 float UGFN_R_Smax::Evaluate(const FVector3f& pos)
 {
 	if (InputA->Connection != nullptr) {
 		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputA->Connection->OwningNode);
 		a = node->Evaluate(pos);
 	}
-	if (InputA->Connection != nullptr) {
+	else {
+		a = FLT_MIN;
+	}
+	if (InputB->Connection != nullptr) {
 		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputB->Connection->OwningNode);
 		b = node->Evaluate(pos);
+	}
+	else {
+		b = FLT_MIN;
 	}
 	if (InputSmoothing->Connection != nullptr) {
 		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputSmoothing->Connection->OwningNode);
@@ -266,28 +214,6 @@ UGFN_E_Base* UGFN_R_Min::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::p
 	return newNode;
 }
 
-FString UGFN_R_Min::CreateShaderEvalCall(TArray<FString>& PinDeclarations)
-{
-	FString AVal;
-	FString BVal;
-	if (InputA->Connection != nullptr) {
-		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputA->Connection->OwningNode);
-		AVal.Appendf(TEXT("PIN_%s"), *(InputA->PinId.ToString(EGuidFormats::DigitsLower)));
-		PinDeclarations.Add(FString::Printf(TEXT("float %s = %s;\n"), *AVal, *(node->CreateShaderEvalCall(PinDeclarations))));
-	}
-	else {
-		AVal.Appendf(TEXT("%f"), a);
-	}
-	if (InputB->Connection != nullptr) {
-		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputB->Connection->OwningNode);
-		BVal.Appendf(TEXT("PIN_%s"), *(InputB->PinId.ToString(EGuidFormats::DigitsLower)));
-		PinDeclarations.Add(FString::Printf(TEXT("float %s = %s;\n"), *BVal, *(node->CreateShaderEvalCall(PinDeclarations))));
-	}
-	else {
-		BVal.Appendf(TEXT("%f"), b);
-	}
-	return FString::Printf(TEXT("min(%s,%s)"), *AVal, *BVal);
-}
 
 float UGFN_R_Min::Evaluate(const FVector3f& pos)
 {
@@ -295,9 +221,15 @@ float UGFN_R_Min::Evaluate(const FVector3f& pos)
 		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputA->Connection->OwningNode);
 		a = node->Evaluate(pos);
 	}
-	if (InputA->Connection != nullptr) {
+	else {
+		a = FLT_MAX;
+	}
+	if (InputB->Connection != nullptr) {
 		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputB->Connection->OwningNode);
 		b = node->Evaluate(pos);
+	}
+	else {
+		b = FLT_MAX;
 	}
 	//https://iquilezles.org/articles/smin/
 	
@@ -350,38 +282,21 @@ UGFN_E_Base* UGFN_R_Max::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::p
 	return newNode;
 }
 
-FString UGFN_R_Max::CreateShaderEvalCall(TArray<FString>& PinDeclarations)
-{
-	FString AVal;
-	FString BVal;
-	if (InputA->Connection != nullptr) {
-		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputA->Connection->OwningNode);
-		AVal.Appendf(TEXT("PIN_%s"), *(InputA->PinId.ToString(EGuidFormats::DigitsLower)));
-		PinDeclarations.Add(FString::Printf(TEXT("float %s = %s;\n"), *AVal, *(node->CreateShaderEvalCall(PinDeclarations))));
-	}
-	else {
-		AVal.Appendf(TEXT("%f"), a);
-	}
-	if (InputB->Connection != nullptr) {
-		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputB->Connection->OwningNode);
-		BVal.Appendf(TEXT("PIN_%s"), *(InputB->PinId.ToString(EGuidFormats::DigitsLower)));
-		PinDeclarations.Add(FString::Printf(TEXT("float %s = %s;\n"), *BVal, *(node->CreateShaderEvalCall(PinDeclarations))));
-	}
-	else {
-		BVal.Appendf(TEXT("%f"), b);
-	}
-	return FString::Printf(TEXT("max(%s,%s)"), *AVal, *BVal);
-}
-
 float UGFN_R_Max::Evaluate(const FVector3f& pos)
 {
 	if (InputA->Connection != nullptr) {
 		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputA->Connection->OwningNode);
 		a = node->Evaluate(pos);
 	}
-	if (InputA->Connection != nullptr) {
+	else {
+		a = FLT_MIN;
+	}
+	if (InputB->Connection != nullptr) {
 		UGFN_R_BaseFloat* node = Cast<UGFN_R_BaseFloat>(InputB->Connection->OwningNode);
 		b = node->Evaluate(pos);
+	}
+	else {
+		b = FLT_MIN;
 	}
 	return FMath::Max(-a, b);
 }

@@ -76,7 +76,7 @@ public:
 	virtual UGFN_E_Base* CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UEdGraphPin*>& idToPinMap) override;
 	UPROPERTY()
 	bool Value;
-	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override {return Value ? FString(TEXT("true")) : FString(TEXT("false"));}
+	
 	virtual bool Evaluate(const FVector3f& pos) override { return Value; }
 };
 UCLASS()
@@ -89,7 +89,7 @@ public:
 	virtual UGFN_E_Base* CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UEdGraphPin*>& idToPinMap) override;
 	UPROPERTY()
 	int Value;
-	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override {return FString::Printf(TEXT("%i"), Value);}
+	
 	virtual int Evaluate(const FVector3f& pos) override { return Value; }
 };
 UCLASS()
@@ -102,7 +102,7 @@ public:
 	virtual UGFN_E_Base* CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UEdGraphPin*>& idToPinMap) override;
 	UPROPERTY()
 	float Value;
-	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override {return FString::Printf(TEXT("%f"), Value);}
+
 	virtual float Evaluate(const FVector3f& pos) override { return Value; }
 };
 UCLASS()
@@ -115,7 +115,7 @@ public:
 	virtual UGFN_E_Base* CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UEdGraphPin*>& idToPinMap) override;
 	UPROPERTY()
 	FVector3f Value;
-	virtual FString CreateShaderEvalCall(TArray<FString>& PinDeclarations) override {return FString::Printf(TEXT("float3(%f,%f,%f)"), Value.X, Value.Y, Value.Z);}
+
 	virtual FVector3f Evaluate(const FVector3f& pos) override { return Value; }
 
 };

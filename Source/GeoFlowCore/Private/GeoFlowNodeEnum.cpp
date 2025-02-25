@@ -94,6 +94,12 @@ AddNodeArgs EnumToAddNodeArgs(EGeoFlowNodeType type)
 			UGFN_E_PrimitiveEllipsoid::StaticClass(),
 			TEXT("Primitive"),
 			TEXT("Ellipsoid")
+		};	
+	case EGeoFlowNodeType::PrimitiveCube:
+		return {
+			UGFN_E_PrimitiveCube::StaticClass(),
+			TEXT("Primitive"),
+			TEXT("Cube")
 		};
 	case EGeoFlowNodeType::PrimitiveBox:
 		return {
@@ -101,7 +107,18 @@ AddNodeArgs EnumToAddNodeArgs(EGeoFlowNodeType type)
 			TEXT("Primitive"),
 			TEXT("Box")
 		};
-
+	case EGeoFlowNodeType::PrimitiveCone:
+		return {
+			UGFN_E_PrimitiveCone::StaticClass(),
+			TEXT("Primitive"),
+			TEXT("Cone")
+		};
+	case EGeoFlowNodeType::PrimitiveCylinder:
+		return {
+			UGFN_E_PrimitiveCylinder::StaticClass(),
+			TEXT("Primitive"),
+			TEXT("Cylinder")
+		};
 
 
 	case EGeoFlowNodeType::Smin:

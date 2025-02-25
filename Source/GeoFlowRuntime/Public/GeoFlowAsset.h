@@ -13,21 +13,24 @@ namespace UE {
 	}
 };
 class UGeoFlowComponent;
+class UDynamicMeshComponent;
 class UGFN_R_Output;
 USTRUCT()
 struct GEOFLOWRUNTIME_API FGeoFlowGenerationSettings {
 	GENERATED_BODY()
 	UPROPERTY(EditAnywhere,DisplayName="Resolution")
 	double stepSize = 5;
-	UPROPERTY(EditAnywhere,DisplayName="Vertex Merge Distance")
-	double mergeDistance = 0.01;
+	UPROPERTY(EditAnywhere,DisplayName="Draw Boundary Debug")
+	bool debug = false;
+	UPROPERTY(EditAnywhere,DisplayName="Reuse common vertices")
+	bool ReuseVertices = true;
 };
 UCLASS(BlueprintType)
 class GEOFLOWRUNTIME_API UGeoFlowAsset : public UObject
 {
 	GENERATED_BODY()
 public:
-	void Generate(UGeoFlowComponent* parent);
+	void Generate(UDynamicMeshComponent* parent);
 	UPROPERTY()
 	UGeoFlowRuntimeGraph* Graph = nullptr;
 	//when loaded - *guarantee* that last generate was BEFORE last graph change
@@ -37,17 +40,14 @@ public:
 	void LoadToEditor(UEdGraph* _workingGraph);
 	bool NeedsResave();
 	UEdGraph* lastWorkingGraph;
-	FString MakeShaderSource();
+	UPROPERTY(EditAnywhere, DisplayName = "Generation Settings", meta = (FullyExpand = true))
+	FGeoFlowGenerationSettings Settings;
 protected:
 	
-	void DoMarchingCubes(UE::Geometry::FDynamicMesh3* EditMesh, const FGeoFlowGenerationSettings& settings,FVector3f ObjectCentre, TArray<FIntVector3> primitiveOffsets);
+	void DoMarchingCubes(UE::Geometry::FDynamicMesh3* EditMesh, UDynamicMeshComponent* parent, TArray<FIntVector3> primitiveOffsets);
 
 	float SampleSDF(FVector3f pos);
 
 	FVector3f VertexInterp(FVector3f aPos, FVector3f bPos, float aVal, float bVal);
 	UGFN_R_Output* _outputNode;
-
-
-	TArray<FVector3f> AllPoints;
-	TArray<float> Vals;
 };

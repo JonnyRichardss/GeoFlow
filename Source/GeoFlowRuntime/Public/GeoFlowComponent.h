@@ -16,17 +16,17 @@ class GEOFLOWRUNTIME_API UGeoFlowComponent : public UDynamicMeshComponent
 {
 public:
 	GENERATED_BODY()
-	UPROPERTY(EditAnywhere,Category = "GeoFlow",DisplayName="Generation Settings", meta = (FullyExpand = true))
-	FGeoFlowGenerationSettings GenSettings;
+	
+	UPROPERTY(EditAnywhere, Category = "GeoFlow", DisplayName = "Auto-Update");
+	bool AutoUpdate = true;
 
 	UPROPERTY(EditAnywhere,Category = "GeoFlow",DisplayName="GeoFlow Asset")
 	UGeoFlowAsset* geo;
 	UGeoFlowComponent();
 	virtual ~UGeoFlowComponent();
 	void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent);
-
 	//regenerate the mesh from the graph asset
-	UFUNCTION(BlueprintCallable) 
+	UFUNCTION(BlueprintCallable,CallInEditor, Category = "GeoFlow")
 	void Regen();
 
 	//forces regeneration whether graph has been updated or not

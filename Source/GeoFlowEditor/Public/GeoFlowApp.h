@@ -15,7 +15,8 @@ public:
 	void SetWorkingGraphUi(TSharedPtr<SGraphEditor> workingGraphUI) { _workingGraphUI = workingGraphUI; }
 	void SetSelectedNodeDetailView(TSharedPtr<class IDetailsView> detailsView);
 	void OnGraphSelectionChanged(const FGraphPanelSelectionSet& selection);
-
+	FReply OnGenerateClicked();
+	FOnClicked GenerateDelegate;
 public: //FAssetEditorToolkit interface
 	virtual FName GetToolkitFName() const override { return FName(TEXT("GeoFlowEditorApp")); }
 	virtual FText GetBaseToolkitName() const override { return FText::FromString(TEXT("GeoFlowEditorApp")); }
@@ -32,6 +33,9 @@ public: //FAssetEditorToolkit interface
 	TSharedPtr<FUICommandList> GetGraphEditorCommands();
 	void DeleteSelectedNodes();
 	void DuplicateSelectedNodes();
+
+	TSharedPtr<class SGeoFlowEditorViewport> ViewportWidget;
+	TSharedPtr<class FGeoFlowViewportClient> ViewportClient;
 protected:
 	TSharedPtr<FUICommandList> GraphEditorCommands;
 	void UpdateWorkingAssetFromGraph();

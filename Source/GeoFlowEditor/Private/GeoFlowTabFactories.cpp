@@ -75,24 +75,71 @@ TSharedRef<SWidget> GeoFlowPropertiesTabFactory::CreateTabBody(const FWorkflowTa
 	TSharedPtr<IDetailsView> nodeDetailsView = propertyEditorModule.CreateDetailView(args);
 	nodeDetailsView->SetObject(nullptr);
 	app->SetSelectedNodeDetailView(nodeDetailsView);
-
-	return SNew(SVerticalBox) 
+	return SNew(SVerticalBox)
+		+ SVerticalBox::Slot()
+		.FillHeight(0.5f)
+		.HAlign(HAlign_Fill)
+		[
+			graphDetailsView.ToSharedRef()
+		]
 		+ SVerticalBox::Slot()
 		.FillHeight(0.25f)
 		.HAlign(HAlign_Fill)
 		[
 			nodeDetailsView.ToSharedRef()
 		]
-		+ SVerticalBox::Slot()
-		.FillHeight(0.75f)
-		.HAlign(HAlign_Fill)
-		[
-			graphDetailsView.ToSharedRef()
-		]
 		;
 }
 
 FText GeoFlowPropertiesTabFactory::GetTabToolTipText(const FWorkflowTabSpawnInfo& info) const
+{
+	return FText::FromString(TEXT("Jonny wuz here"));
+}
+
+GeoFlowPreviewTabFactory::GeoFlowPreviewTabFactory(TSharedPtr<class GeoFlowEditorApp> app) : FWorkflowTabFactory(FName("GeoFlowPreviewTab"), app)
+{
+	_app = app;
+	TabLabel = FText::FromString(TEXT("Preview"));
+	ViewMenuDescription = FText::FromString(TEXT("Tab for preview display"));
+	ViewMenuTooltip = FText::FromString(TEXT("Jonny wuz here"));
+}
+
+TSharedRef<SWidget> GeoFlowPreviewTabFactory::CreateTabBody(const FWorkflowTabSpawnInfo& info) const
+{
+	TSharedPtr<GeoFlowEditorApp> app = _app.Pin();
+	
+	app->ViewportWidget = SNew(SGeoFlowEditorViewport);
+	return SNew(SVerticalBox)
+		+ SVerticalBox::Slot()
+		.FillHeight(0.5f)
+		.HAlign(HAlign_Fill)
+		[
+			app->ViewportWidget.ToSharedRef()
+		]
+		+ SVerticalBox::Slot()
+		.FillHeight(0.05f)
+		.HAlign(HAlign_Fill)
+		[
+			SNew(SButton)
+				.OnClicked_Lambda([this]()
+					{
+						TSharedPtr<GeoFlowEditorApp> app = _app.Pin();
+						if (app.IsValid()) {
+							return app->OnGenerateClicked();
+						}
+						else {
+							return FReply::Unhandled();
+						}
+					})
+				.Text(FText::FromString(TEXT("Generate Preview")))
+				.HAlign(HAlign_Fill)
+				.VAlign(VAlign_Fill)
+				.ContentScale(FVector2D(4.0))
+		]
+		;
+}
+
+FText GeoFlowPreviewTabFactory::GetTabToolTipText(const FWorkflowTabSpawnInfo& info) const
 {
 	return FText::FromString(TEXT("Jonny wuz here"));
 }
