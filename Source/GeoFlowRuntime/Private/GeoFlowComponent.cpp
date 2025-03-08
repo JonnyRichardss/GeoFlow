@@ -26,7 +26,7 @@ void UGeoFlowComponent::Regen()
 {
 	if (geo != nullptr) {
 		//if last generate was earlier than last save OR if one of our nodes is marked as needing to be saved (when pin changes)
-		if (geo->LastGenerate < geo->LastGraphChange || geo->NeedsResave() || MeshObject->IsEmpty()) {
+		if (geo->LastGenerate < geo->LastGraphChange || MeshObject->IsEmpty()) {
 			ForceRegen();
 		}
 	}

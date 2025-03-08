@@ -1,5 +1,5 @@
 #pragma once
-
+#include "GeoFlowPinDefaultValueOps.h"
 #include "EdGraph/EdGraphPin.h"
 #include "GeoFlowNodeTypes.h"
 #include "GeoFlowPrimitiveNodes.generated.h"
@@ -10,8 +10,31 @@ class GEOFLOWCORE_API UGFN_E_BasePrimitive : public UGFN_E_BaseFloat {
 public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::BasePrimitive; }
 	virtual FText GetNodeTitle(ENodeTitleType::Type titleType) const override { return FText::FromString("Default Primitive node"); }
+	virtual FLinearColor GetNodeTitleColor() const override { return FLinearColor::FromSRGBColor(FColor::Cyan); }
+	virtual void PinDefaultValueChanged(UEdGraphPin* Pin) override {
+		if (Pin == PositionInput) {
+			position = GetVectorDefaultValue(Pin);
+		}
+		else if (Pin == RotationInput) {
+			rotation = GetVectorDefaultValue(Pin);
+		}
+		Super::PinDefaultValueChanged(Pin);
+	}
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override {
+		if (PropertyChangedEvent.GetMemberPropertyName() == GET_MEMBER_NAME_CHECKED(UGFN_E_BasePrimitive, position)) {
+			SetVectorDefaultValue(PositionInput, position);
+		}
+		else if (PropertyChangedEvent.GetMemberPropertyName() == GET_MEMBER_NAME_CHECKED(UGFN_E_BasePrimitive, rotation)) {
+			SetVectorDefaultValue(RotationInput, rotation);
+		}
+		Super::PostEditChangeProperty(PropertyChangedEvent);
+	}
 	UEdGraphPin* PositionInput = nullptr;
 	UEdGraphPin* RotationInput = nullptr;
+	UPROPERTY(EditAnywhere,Category="Node Properties")
+	FVector3f position;
+	UPROPERTY(EditAnywhere,Category="Node Properties")
+	FVector3f rotation;
 };
 UCLASS()
 class GEOFLOWCORE_API UGFN_R_BasePrimitive : public UGFN_R_BaseFloat {
@@ -39,9 +62,22 @@ public:
 
 	virtual UGFN_R_Base* CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UGeoFlowRuntimePin*>& idToPinMap) override;
 	virtual TArray<UEdGraphPin*> CreateInputPins(UEdGraphPin* fromPin) override;
-
+	virtual void PinDefaultValueChanged(UEdGraphPin* Pin) override {
+		if (Pin == RadiusInput) {
+			radius = GetFloatDefaultValue(Pin);
+		}
+		Super::PinDefaultValueChanged(Pin);
+	}
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override {
+		if (PropertyChangedEvent.GetMemberPropertyName() == GET_MEMBER_NAME_CHECKED(UGFN_E_PrimitiveSphere, radius)) {
+			SetFloatDefaultValue(RadiusInput, radius);
+		}
+		Super::PostEditChangeProperty(PropertyChangedEvent);
+	}
 
 	UEdGraphPin* RadiusInput = nullptr;
+	UPROPERTY(EditAnywhere,Category="Node Properties")
+	float radius;
 };
 UCLASS()
 class GEOFLOWCORE_API UGFN_R_PrimitiveSphere : public UGFN_R_BasePrimitive {
@@ -68,9 +104,22 @@ public:
 
 	virtual UGFN_R_Base* CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UGeoFlowRuntimePin*>& idToPinMap) override;
 	virtual TArray<UEdGraphPin*> CreateInputPins(UEdGraphPin* fromPin) override;
-
+	virtual void PinDefaultValueChanged(UEdGraphPin* Pin) override {
+		if (Pin == RadiusInput) {
+			radius = GetFloatDefaultValue(Pin);
+		}
+		Super::PinDefaultValueChanged(Pin);
+	}
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override {
+		if (PropertyChangedEvent.GetMemberPropertyName() == GET_MEMBER_NAME_CHECKED(UGFN_E_PrimitiveCube, radius)) {
+			SetFloatDefaultValue(RadiusInput, radius);
+		}
+		Super::PostEditChangeProperty(PropertyChangedEvent);
+	}
 
 	UEdGraphPin* RadiusInput = nullptr;
+	UPROPERTY(EditAnywhere,Category="Node Properties")
+	float radius;
 };
 UCLASS()
 class GEOFLOWCORE_API UGFN_R_PrimitiveCube : public UGFN_R_BasePrimitive {
@@ -97,9 +146,22 @@ public:
 
 	virtual UGFN_R_Base* CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UGeoFlowRuntimePin*>& idToPinMap) override;
 	virtual TArray<UEdGraphPin*> CreateInputPins(UEdGraphPin* fromPin) override;
-
+	virtual void PinDefaultValueChanged(UEdGraphPin* Pin) override {
+		if (Pin == RadiusInput) {
+			radius = GetVectorDefaultValue(Pin);
+		}
+		Super::PinDefaultValueChanged(Pin);
+	}
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override {
+		if (PropertyChangedEvent.GetMemberPropertyName() == GET_MEMBER_NAME_CHECKED(UGFN_E_PrimitiveBox, radius)) {
+			SetVectorDefaultValue(RadiusInput, radius);
+		}
+		Super::PostEditChangeProperty(PropertyChangedEvent);
+	}
 
 	UEdGraphPin* RadiusInput = nullptr;
+	UPROPERTY(EditAnywhere,Category="Node Properties", DisplayName="Extents")
+	FVector3f radius;
 };
 UCLASS()
 class GEOFLOWCORE_API UGFN_R_PrimitiveBox : public UGFN_R_BasePrimitive {
@@ -126,8 +188,21 @@ public:
 
 	virtual UGFN_R_Base* CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UGeoFlowRuntimePin*>& idToPinMap) override;
 	virtual TArray<UEdGraphPin*> CreateInputPins(UEdGraphPin* fromPin) override;
-
+	virtual void PinDefaultValueChanged(UEdGraphPin* Pin) override {
+		if (Pin == RadiusInput) {
+			radius = GetVectorDefaultValue(Pin);
+		}
+		Super::PinDefaultValueChanged(Pin);
+	}
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override {
+		if (PropertyChangedEvent.GetMemberPropertyName() == GET_MEMBER_NAME_CHECKED(UGFN_E_PrimitiveEllipsoid, radius)) {
+			SetVectorDefaultValue(RadiusInput, radius);
+		}
+		Super::PostEditChangeProperty(PropertyChangedEvent);
+	}
 	UEdGraphPin* RadiusInput = nullptr;
+	UPROPERTY(EditAnywhere,Category="Node Properties", DisplayName="Extents")
+	FVector3f radius;
 };
 UCLASS()
 class GEOFLOWCORE_API UGFN_R_PrimitiveEllipsoid : public UGFN_R_BasePrimitive {
@@ -154,9 +229,30 @@ public:
 	virtual UGFN_R_Base* CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UGeoFlowRuntimePin*>& idToPinMap) override;
 	virtual TArray<UEdGraphPin*> CreateInputPins(UEdGraphPin* fromPin) override;
 
-
+	virtual void PinDefaultValueChanged(UEdGraphPin* Pin) override {
+		if (Pin == AngleInput) {
+			angle = GetFloatDefaultValue(Pin);
+		}
+		else if (Pin == HeightInput) {
+			height = GetFloatDefaultValue(Pin);
+		}
+		Super::PinDefaultValueChanged(Pin);
+	}
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override {
+		if (PropertyChangedEvent.GetMemberPropertyName() == GET_MEMBER_NAME_CHECKED(UGFN_E_PrimitiveCone, angle)) {
+			SetFloatDefaultValue(AngleInput, angle);
+		}
+		else if (PropertyChangedEvent.GetMemberPropertyName() == GET_MEMBER_NAME_CHECKED(UGFN_E_PrimitiveCone, height)) {
+			SetFloatDefaultValue(HeightInput, height);
+		}
+		Super::PostEditChangeProperty(PropertyChangedEvent);
+	}
 	UEdGraphPin* AngleInput = nullptr;
 	UEdGraphPin* HeightInput = nullptr;
+	UPROPERTY(EditAnywhere,Category="Node Properties")
+	float angle;
+	UPROPERTY(EditAnywhere,Category="Node Properties")
+	float height;
 };
 UCLASS()
 class GEOFLOWCORE_API UGFN_R_PrimitiveCone : public UGFN_R_BasePrimitive {
@@ -187,10 +283,31 @@ public:
 
 	virtual UGFN_R_Base* CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UGeoFlowRuntimePin*>& idToPinMap) override;
 	virtual TArray<UEdGraphPin*> CreateInputPins(UEdGraphPin* fromPin) override;
-
+	virtual void PinDefaultValueChanged(UEdGraphPin* Pin) override {
+		if (Pin == RadiusInput) {
+			radius = GetFloatDefaultValue(Pin);
+		}
+		else if (Pin == HeightInput) {
+			height = GetFloatDefaultValue(Pin);
+		}
+		Super::PinDefaultValueChanged(Pin);
+	}
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override {
+		if (PropertyChangedEvent.GetMemberPropertyName() == GET_MEMBER_NAME_CHECKED(UGFN_E_PrimitiveCylinder, radius)) {
+			SetFloatDefaultValue(RadiusInput, radius);
+		}
+		else if (PropertyChangedEvent.GetMemberPropertyName() == GET_MEMBER_NAME_CHECKED(UGFN_E_PrimitiveCylinder, height)) {
+			SetFloatDefaultValue(HeightInput, height);
+		}
+		Super::PostEditChangeProperty(PropertyChangedEvent);
+	}
 
 	UEdGraphPin* RadiusInput = nullptr;
 	UEdGraphPin* HeightInput = nullptr;
+	UPROPERTY(EditAnywhere,Category="Node Properties")
+	float radius;
+	UPROPERTY(EditAnywhere,Category="Node Properties")
+	float height;
 };
 UCLASS()
 class GEOFLOWCORE_API UGFN_R_PrimitiveCylinder : public UGFN_R_BasePrimitive {

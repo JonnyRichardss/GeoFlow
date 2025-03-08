@@ -38,7 +38,6 @@ public:
 	FDateTime LastGenerate = 0;
 	void SaveFromEditor(UEdGraph* _workingGraph);
 	void LoadToEditor(UEdGraph* _workingGraph);
-	bool NeedsResave();
 	UEdGraph* lastWorkingGraph;
 	UPROPERTY(EditAnywhere, DisplayName = "Generation Settings", meta = (FullyExpand = true))
 	FGeoFlowGenerationSettings Settings;

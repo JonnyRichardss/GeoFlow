@@ -40,6 +40,7 @@ protected:
 	TSharedPtr<FUICommandList> GraphEditorCommands;
 	void UpdateWorkingAssetFromGraph();
 	void UpdateEditorGraphFromWorkingAsset();
+	void RegisterGraphUpdateDelegates();
 private:
 	UPROPERTY()
 	class UGeoFlowAsset* _workingAsset = nullptr;

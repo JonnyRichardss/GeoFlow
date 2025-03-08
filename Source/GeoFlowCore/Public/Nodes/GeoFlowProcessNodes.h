@@ -1,6 +1,7 @@
 #pragma once
 #include "EdGraph/EdGraphPin.h"
 #include "GeoFlowNodeTypes.h"
+#include "GeoFlowPinDefaultValueOps.h"
 #include "GeoFlowProcessNodes.generated.h"
 
 UCLASS()
@@ -12,11 +13,24 @@ public:
 
 	virtual UGFN_R_Base* CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UGeoFlowRuntimePin*>& idToPinMap) override;
 	virtual TArray<UEdGraphPin*> CreateInputPins(UEdGraphPin* fromPin) override;
-
-	
+	virtual FLinearColor GetNodeTitleColor() const override { return FLinearColor::White; }
+	virtual void PinDefaultValueChanged(UEdGraphPin* Pin) override {
+		if (Pin == InputSmoothing) {
+			smoothing = GetFloatDefaultValue(Pin);
+		}
+		Super::PinDefaultValueChanged(Pin);
+	}
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override {
+		if (PropertyChangedEvent.GetMemberPropertyName() == GET_MEMBER_NAME_CHECKED(UGFN_E_Smin, smoothing)) {
+			SetFloatDefaultValue(InputSmoothing, smoothing);
+		}
+		Super::PostEditChangeProperty(PropertyChangedEvent);
+	}
 	UEdGraphPin* InputA = nullptr;
 	UEdGraphPin* InputB = nullptr;
 	UEdGraphPin* InputSmoothing = nullptr;
+	UPROPERTY(EditAnywhere,Category="Node Properties")
+	float smoothing;
 };
 UCLASS()
 class GEOFLOWCORE_API UGFN_R_Smin : public UGFN_R_BaseFloat {
@@ -25,7 +39,7 @@ public:
 	virtual EGeoFlowNodeType NodeType() const override { return EGeoFlowNodeType::Smin; }
 
 	virtual UGFN_E_Base* CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UEdGraphPin*>& idToPinMap) override;
-
+	
 	UPROPERTY()
 	UGeoFlowRuntimePin* InputA = nullptr;
 	UPROPERTY()
@@ -51,11 +65,24 @@ public:
 
 	virtual UGFN_R_Base* CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UGeoFlowRuntimePin*>& idToPinMap) override;
 	virtual TArray<UEdGraphPin*> CreateInputPins(UEdGraphPin* fromPin) override;
-
-	
+	virtual FLinearColor GetNodeTitleColor() const override { return FLinearColor::Red; }
+	virtual void PinDefaultValueChanged(UEdGraphPin* Pin) override {
+		if (Pin == InputSmoothing) {
+			smoothing = GetFloatDefaultValue(Pin);
+		}
+		Super::PinDefaultValueChanged(Pin);
+	}
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override {
+		if (PropertyChangedEvent.GetMemberPropertyName() == GET_MEMBER_NAME_CHECKED(UGFN_E_Smax, smoothing)) {
+			SetFloatDefaultValue(InputSmoothing, smoothing);
+		}
+		Super::PostEditChangeProperty(PropertyChangedEvent);
+	}
 	UEdGraphPin* InputA = nullptr;
 	UEdGraphPin* InputB = nullptr;
 	UEdGraphPin* InputSmoothing = nullptr;
+	UPROPERTY(EditAnywhere, Category = "Node Properties")
+	float smoothing;
 };
 UCLASS()
 class GEOFLOWCORE_API UGFN_R_Smax : public UGFN_R_BaseFloat {
@@ -91,7 +118,7 @@ public:
 
 	virtual UGFN_R_Base* CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UGeoFlowRuntimePin*>& idToPinMap) override;
 	virtual TArray<UEdGraphPin*> CreateInputPins(UEdGraphPin* fromPin) override;
-
+	virtual FLinearColor GetNodeTitleColor() const override { return FLinearColor::White; }
 
 	UEdGraphPin* InputA = nullptr;
 	UEdGraphPin* InputB = nullptr;
@@ -128,7 +155,7 @@ public:
 
 	virtual UGFN_R_Base* CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap < FGuid, UGeoFlowRuntimePin*>& idToPinMap) override;
 	virtual TArray<UEdGraphPin*> CreateInputPins(UEdGraphPin* fromPin) override;
-
+	virtual FLinearColor GetNodeTitleColor() const override { return FLinearColor::Red; }
 
 	UEdGraphPin* InputA = nullptr;
 	UEdGraphPin* InputB = nullptr;

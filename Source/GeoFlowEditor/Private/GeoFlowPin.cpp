@@ -4,6 +4,7 @@
 #include "KismetPins/SGraphPinInteger.h"
 #include "KismetPins/SGraphPinNum.h"
 #include "KismetPins/SGraphPinVector.h"
+#include "Nodes/GeoFlowConstantNodes.h"
 class SGeoFlowPinBool : public SGraphPinBool {
 public:
 	SLATE_BEGIN_ARGS(SGeoFlowPinBool) {}
@@ -20,15 +21,15 @@ public:
 protected:
 	virtual FSlateColor GetPinColor() const override { return FSlateColor(FLinearColor::Blue); }
 };
-class SGeoFlowPinDouble : public SGraphPinNum<double> {
+class SGeoFlowPinFloat : public SGraphPinNum<float> {
 public:
-	SLATE_BEGIN_ARGS(SGeoFlowPinDouble) {}
+	SLATE_BEGIN_ARGS(SGeoFlowPinFloat) {}
 	SLATE_END_ARGS()
 	void Construct(const FArguments& inArgs, UEdGraphPin* inGraphPinObj) { SGraphPinNum::Construct(SGraphPinNum::FArguments(), inGraphPinObj); }
 protected:
 	virtual FSlateColor GetPinColor() const override { return FSlateColor(FLinearColor::Green); }
 };
-class SGeoFlowPinVector : public SGraphPinVector<double> {
+class SGeoFlowPinVector : public SGraphPinVector<float> {
 public:
 	SLATE_BEGIN_ARGS(SGeoFlowPinVector) {}
 	SLATE_END_ARGS()
@@ -36,28 +37,50 @@ public:
 protected:
 	virtual FSlateColor GetPinColor() const override { return FSlateColor(FLinearColor::Yellow); }
 };
+class SGeoFlowPinArray : public SGraphPin {
+public:
+	SLATE_BEGIN_ARGS(SGeoFlowPinArray) {}
+	SLATE_END_ARGS()
+	void Construct(const FArguments& inArgs, UEdGraphPin* inGraphPinObj) { SGraphPin::Construct(SGraphPin::FArguments(), inGraphPinObj); }
+protected:
+	virtual FSlateColor GetPinColor() const override { return FSlateColor(FColor::FromHex(TEXT("#0F52BA"))); }
+};
 FGeoFlowPinFactory::~FGeoFlowPinFactory() {}
 
 TSharedPtr<SGraphPin> FGeoFlowPinFactory::CreatePin(UEdGraphPin* pin) const {
 	FName subCategory = pin->PinType.PinSubCategory;
 	if (AllEnumPinNames().Contains(subCategory)) {//if its one of our pins
 		EGeoFlowReturnType rtype = *NameToEnumMap().Find(subCategory);
+		TSharedPtr<SGraphPin> p;
 		switch (rtype) {
 		case EGeoFlowReturnType::None:
 			//shouldnt happen ever
-			return SNew(SGraphPin, pin);
+			p = SNew(SGraphPin, pin);
+			break;
 		case EGeoFlowReturnType::Bool:
-			return SNew(SGeoFlowPinBool, pin);
+			p = SNew(SGeoFlowPinBool, pin);
+			break;
 		case EGeoFlowReturnType::Int:
-			return SNew(SGeoFlowPinInteger, pin);
+			p = SNew(SGeoFlowPinInteger, pin);
+			break;
 		case EGeoFlowReturnType::Float:
-			return SNew(SGeoFlowPinDouble, pin);
+			p = SNew(SGeoFlowPinFloat, pin);
+			break;
 		case EGeoFlowReturnType::Vector:
-			return SNew(SGeoFlowPinVector, pin);
+			p = SNew(SGeoFlowPinVector, pin);
+			break;
+		case EGeoFlowReturnType::Array:
+			p = SNew(SGeoFlowPinArray, pin);
+			break;
 		default:
 			//unreachable
 			return SNew(SGraphPin, pin);
 		}
+		if (pin->bNotConnectable) {
+			const FSlateBrush* brush = FSlateIcon(TEXT("GeoFlowEditorStyle"), TEXT("GeoFlowEditor.HiddenPinIcon")).GetIcon();
+			p->SetCustomPinIcon(brush, brush);
+		}
+		return p;
 	}
 	else {
 		return nullptr;

@@ -5,7 +5,7 @@
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "GeoFlowGraphSchema.h"
 #include "GeoFlowRuntimeGraph.h"
-#include "GeoFlowNodeTypes.h"
+#include "Nodes/GeoFlowNodeTypes.h"
 #include "GeoFlowAsset.h"
 #include "Framework/Commands/GenericCommands.h"
 #include "GeoFlowViewport.h"
@@ -108,6 +108,7 @@ void GeoFlowEditorApp::OnNodeDetailViewPropertiesUpdate(const FPropertyChangedEv
 void GeoFlowEditorApp::OnGraphChanged(const FEdGraphEditAction& editAction)
 {
 	UpdateWorkingAssetFromGraph();
+	RegisterGraphUpdateDelegates();
 }
 
 
@@ -157,9 +158,21 @@ void GeoFlowEditorApp::UpdateEditorGraphFromWorkingAsset()
 	if (_workingAsset->Graph == nullptr) {
 		_workingGraph->GetSchema()->CreateDefaultNodesForGraph(*_workingGraph);
 		_workingAsset->lastWorkingGraph = _workingGraph;
-		return;
+		
 	}
-	_workingAsset->LoadToEditor(_workingGraph);
+	else {
+		_workingAsset->LoadToEditor(_workingGraph);
+	}
+	RegisterGraphUpdateDelegates();
+}
+
+void GeoFlowEditorApp::RegisterGraphUpdateDelegates()
+{
+	TArray<UGFN_E_Base*> nodes;
+	_workingGraph->GetNodesOfClass<UGFN_E_Base>(nodes);
+	for (UGFN_E_Base* node : nodes) {
+		node->regenDelegate.BindRaw(this,&GeoFlowEditorApp::UpdateWorkingAssetFromGraph);
+	}
 }
 
 

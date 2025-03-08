@@ -1,4 +1,4 @@
-#include "GeoFlowProcessNodes.h"
+#include "Nodes/GeoFlowProcessNodes.h"
 #include "GeoFlowRuntimeGraph.h"
 #include "GeoFlowPinDefaultValueOps.h"
 TArray<UEdGraphPin*> UGFN_E_Smin::CreateInputPins(UEdGraphPin* fromPin)
@@ -52,6 +52,7 @@ UGFN_E_Base* UGFN_R_Smin::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::
 	UEdGraphPin* UiPinS = InitUiPin(newNode, InputSmoothing, connections, idToPinMap);
 	newNode->InputSmoothing = UiPinS;
 	SetFloatDefaultValue(UiPinS, smoothing);
+	newNode->smoothing = smoothing;
 	//output
 	UEdGraphPin* OutputUiPin = InitUiPin(newNode, Output, connections, idToPinMap);
 	newNode->Output = OutputUiPin;
@@ -134,6 +135,7 @@ UGFN_E_Base* UGFN_R_Smax::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::
 	UEdGraphPin* UiPinS = InitUiPin(newNode, InputSmoothing, connections, idToPinMap);
 	newNode->InputSmoothing = UiPinS;
 	SetFloatDefaultValue(UiPinS, smoothing);
+	newNode->smoothing = smoothing;
 	//output
 	UEdGraphPin* OutputUiPin = InitUiPin(newNode, Output, connections, idToPinMap);
 	newNode->Output = OutputUiPin;
@@ -161,8 +163,8 @@ float UGFN_R_Smax::Evaluate(const FVector3f& pos)
 		smoothing = node->Evaluate(pos);
 	}
 	//https://iquilezles.org/articles/distfunctions/
-	float h = FMath::Clamp(0.5 - 0.5 * (b + a) / smoothing, 0.0, 1.0);
-	return FMath::Lerp(b, 0.0-a, h) + smoothing * h * (1.0 - h);
+	float h = FMath::Clamp(0.5 - 0.5 * (a + b) / smoothing, 0.0, 1.0);
+	return FMath::Lerp(a, 0.0-b, h) + smoothing * h * (1.0 - h);
 }
 
 
@@ -298,5 +300,5 @@ float UGFN_R_Max::Evaluate(const FVector3f& pos)
 	else {
 		b = FLT_MIN;
 	}
-	return FMath::Max(-a, b);
+	return FMath::Max(-b, a);
 }

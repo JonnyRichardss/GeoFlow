@@ -24,7 +24,7 @@ public:
 	UGeoFlowAsset* geo;
 	UGeoFlowComponent();
 	virtual ~UGeoFlowComponent();
-	void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent);
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 	//regenerate the mesh from the graph asset
 	UFUNCTION(BlueprintCallable,CallInEditor, Category = "GeoFlow")
 	void Regen();

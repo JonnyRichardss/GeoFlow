@@ -1,8 +1,8 @@
-#include "GeoFlowNodeTypes.h"
+#include "Nodes/GeoFlowNodeTypes.h"
 #include "GeoFlowRuntimeGraph.h"
 //include all other node types for base GetClassFromNodeType
-#include "GeoFlowConstantNodes.h"
-#include "GeoFlowPrimitiveNodes.h"
+#include "Nodes/GeoFlowConstantNodes.h"
+#include "Nodes/GeoFlowPrimitiveNodes.h"
 
 /*BASE*/
 void UGFN_E_Base::GetNodeContextMenuActions(UToolMenu* menu, UGraphNodeContextMenuContext* context) const
@@ -52,6 +52,9 @@ UEdGraphPin* UGFN_E_Base::CreateCustomPin(EEdGraphPinDirection direction, FName 
 		category,
 		name
 	);
+	if (ConnectionType == EGeoFlowReturnType::Array) {
+		pin->PinType.ContainerType = EPinContainerType::Array;
+	}
 	pin->PinType.PinSubCategory = subcategory;
 	return pin;
 }

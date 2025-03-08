@@ -8,7 +8,8 @@ enum class EGeoFlowReturnType {
 	Bool,
 	Int,
 	Float,
-	Vector
+	Vector,
+	Array
 };
 GEOFLOWCORE_API FName  PinNameFromEnum(EGeoFlowReturnType type);
 GEOFLOWCORE_API const TArray<FName>& AllEnumPinNames();
@@ -21,6 +22,7 @@ enum class EGeoFlowNodeType : int {
 	ConstInt,
 	ConstDouble,
 	ConstVector,
+	ConstArray,
 
 	PrimitiveSphere,
 	PrimitiveEllipsoid,
@@ -29,11 +31,33 @@ enum class EGeoFlowNodeType : int {
 	PrimitiveCone,
 	PrimitiveCylinder,
 
+	ArrayPrimitiveSphere,
+	ArrayPrimitiveEllipsoid,
+	ArrayPrimitiveCube,
+	ArrayPrimitiveBox,
+	ArrayPrimitiveCone,
+	ArrayPrimitiveCylinder,
+
+	Mirror,
+	Grid,
 
 	Smin,
 	Smax,
 	Min,
 	Max,
+
+	
+	FloatAdd,
+	FloatMultiply,
+	FloatSubtract,
+	FloatDivide,
+	
+	VectorAdd,
+	VectorMultiply,
+	VectorSubtract,
+	VectorDivide,
+
+	MakeVector,
 
 
 	//non-creatable types are at end for iterating purposes
@@ -43,7 +67,11 @@ enum class EGeoFlowNodeType : int {
 	BaseInt,
 	BaseFloat,
 	BaseVector,
+	BaseArray,
 	BasePrimitive,
+	BaseArrayPrimitive,
+	FloatMath,
+	VectorMath,
 };
 struct AddNodeArgs {
 	UClass* TemplateClass;

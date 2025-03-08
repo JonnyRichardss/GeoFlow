@@ -26,17 +26,19 @@ void FGeoFlowEditorModule::StartupModule()
 	TSharedPtr<IPlugin> plugin = IPluginManager::Get().FindPlugin("GeoFlow");
 	FString contentDir = plugin->GetContentDir();
 	_styleSet->SetContentRoot(contentDir);
-
+	//TODO replace icons with my own
 	FSlateImageBrush* thumbnailBrush = new FSlateImageBrush(_styleSet->RootToContentDir(TEXT("CustomAssetThumbnail"), TEXT(".png")), FVector2D(128.0, 128.0));
 	FSlateImageBrush* iconBrush = new FSlateImageBrush(_styleSet->RootToContentDir(TEXT("CustomAssetIcon"), TEXT(".png")), FVector2D(128.0, 128.0));
 	FSlateImageBrush* nodeAddPinIcon = new FSlateImageBrush(_styleSet->RootToContentDir(TEXT("NodeAddPinIcon"), TEXT(".png")), FVector2D(128.0, 128.0));
 	FSlateImageBrush* nodeDeletePinIcon = new FSlateImageBrush(_styleSet->RootToContentDir(TEXT("NodeDeletePinIcon"), TEXT(".png")), FVector2D(128.0, 128.0));
 	FSlateImageBrush* nodeDeleteNodeIcon = new FSlateImageBrush(_styleSet->RootToContentDir(TEXT("NodeDeleteNodeIcon"), TEXT(".png")), FVector2D(128.0, 128.0));
+	FSlateImageBrush* HiddenPinIcon = new FSlateImageBrush(_styleSet->RootToContentDir(TEXT("transparentpixel"), TEXT(".png")), FVector2D(1.0, 1.0));
 	_styleSet->Set(TEXT("ClassThumbnail.GeoFlowAsset"), thumbnailBrush);
 	_styleSet->Set(TEXT("ClassIcon.GeoFlowAsset"), iconBrush);
 	_styleSet->Set(TEXT("GeoFlowEditor.NodeAddPinIcon"), nodeAddPinIcon);
 	_styleSet->Set(TEXT("GeoFlowEditor.NodeDeletePinIcon"), nodeDeletePinIcon);
 	_styleSet->Set(TEXT("GeoFlowEditor.NodeDeleteNodeIcon"), nodeDeleteNodeIcon);
+	_styleSet->Set(TEXT("GeoFlowEditor.HiddenPinIcon"), HiddenPinIcon);
 	FSlateStyleRegistry::RegisterSlateStyle(*_styleSet);
 
 	_pinFactory = MakeShareable(new FGeoFlowPinFactory());

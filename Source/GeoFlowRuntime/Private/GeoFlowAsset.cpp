@@ -4,8 +4,9 @@
 #include "GeoFlowComponent.h"
 #include "DynamicMesh/MeshAttributeUtil.h"
 #include "DynamicMesh/MeshNormals.h"
-#include "GeoFlowNodeTypes.h"
-#include "GeoFlowPrimitiveNodes.h"
+#include "Nodes/GeoFlowNodeTypes.h"
+#include "Nodes/GeoFlowArrayPrimitiveNodes.h"
+#include "Nodes/GeoFlowPrimitiveNodes.h"
 #include "TriangulationTable.h"
 #include "Misc/Paths.h"
 #include "Misc/CoreMisc.h"
@@ -53,9 +54,14 @@ void UGeoFlowAsset::Generate(UDynamicMeshComponent* parent)
 			}
 		}
 		UGFN_R_BasePrimitive* primitiveNode = Cast<UGFN_R_BasePrimitive>(baseNode);
+		UGFN_R_BaseArrayPrimitive* arrayNode = Cast<UGFN_R_BaseArrayPrimitive>(baseNode);
 		if (primitiveNode != nullptr) {
 			PrimitivePositions.Add(primitiveNode->GetPosition());
 		}
+		else if (arrayNode != nullptr) {
+			PrimitivePositions.Append(arrayNode->GetPositions());
+		}
+
 	}
 	TArray<FIntVector3> primitiveOffsets;
 
@@ -94,7 +100,6 @@ void UGeoFlowAsset::SaveFromEditor(UEdGraph* _workingGraph)
 	TMap < FGuid, UGeoFlowRuntimePin*> idToPinMap;
 	for (UEdGraphNode* uiNode : _workingGraph->Nodes) {
 		UGFN_E_Base* node = Cast<UGFN_E_Base>(uiNode);
-		node->needsResave = false;
 		UGFN_R_Base* runtimeNode = node->CreateRuntimeNode(runtimeGraph, connections, idToPinMap);
 		runtimeGraph->Nodes.Add(runtimeNode);
 	}
@@ -116,8 +121,8 @@ void UGeoFlowAsset::LoadToEditor(UEdGraph* _workingGraph)
 	TMap < FGuid, UEdGraphPin*> idToPinMap;
 
 	for (UGFN_R_Base* runtimeNode : Graph->Nodes) {
+		if (!IsValid(runtimeNode)) continue;
 		UGFN_E_Base* newNode = runtimeNode->CreateEditorNode(_workingGraph, connections, idToPinMap);
-
 		_workingGraph->AddNode(newNode, true, true);
 	}
 	for (std::pair<FGuid, FGuid> connection : connections) {
@@ -127,22 +132,7 @@ void UGeoFlowAsset::LoadToEditor(UEdGraph* _workingGraph)
 		p2->LinkedTo.Add(p1);
 	}
 }
-bool UGeoFlowAsset::NeedsResave()
-{
-	//we couldnt re-save ourselves anyway so its false
-	if (!IsValid(lastWorkingGraph)) {
-		return false;
-	}
-	bool output = false;
-	for (UEdGraphNode* uiNode : lastWorkingGraph->Nodes) {
-		UGFN_E_Base* node = Cast<UGFN_E_Base>(uiNode);
-		if (node->needsResave) {
-			output = true;
-		}
-		
-	}
-	return output;
-}
+
 static FIntVector3 cornerOffsets[8] = { {-1,-1,-1},{-1,1,-1},{1,1,-1},{1,-1,-1},{-1,-1,1},{-1,1,1},{1,1,1},{1,-1,1} };
 static FIntVector3 edgeOffsets[12] = { {-1,0,-1},{0,1,-1},{1,0,-1},{0,-1,-1},{-1,0,1},{0,1,1},{1,0,1},{0,-1,1},{-1,-1,0},{-1,1,0},{1,1,0},{1,-1,0} };
 static std::pair<int, int> edgeVertices[12] = { {0,1},{1,2},{2,3},{3,0},{4,5},{5,6},{6,7},{7,4},{0,4},{1,5},{2,6},{3,7} };

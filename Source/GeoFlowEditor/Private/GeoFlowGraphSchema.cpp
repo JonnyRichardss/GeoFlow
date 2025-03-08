@@ -1,7 +1,7 @@
 #include "GeoFlowGraphSchema.h"
-#include "GeoFlowNodeTypes.h"
-#include "GeoFlowPrimitiveNodes.h"
-#include "GeoFlowConstantNodes.h"
+#include "Nodes/GeoFlowNodeTypes.h"
+#include "Nodes/GeoFlowPrimitiveNodes.h"
+#include "Nodes/GeoFlowConstantNodes.h"
 
 //move this ty TODO
 static void AddNewNodeAction(TArray<TSharedPtr<FNewNodeAction>>& AllActions, const AddNodeArgs& args) {

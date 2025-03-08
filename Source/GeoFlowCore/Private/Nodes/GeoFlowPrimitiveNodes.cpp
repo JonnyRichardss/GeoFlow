@@ -1,27 +1,10 @@
-#include "GeoFlowPrimitiveNodes.h"
+#include "Nodes/GeoFlowPrimitiveNodes.h"
 #include "GeoFlowRuntimeGraph.h"
-#include "GeoFlowPinDefaultValueOps.h"
+#include "GeoFlowVectorMath.h"
 
 //https://iquilezles.org/articles/distfunctions/
 //for all evals
-static FVector3f CompWiseAbs(FVector3f in) {
-	return FVector3f(FMath::Abs(in.X), FMath::Abs(in.Y), FMath::Abs(in.Z));
-}
-static FVector3f CompWiseMax(FVector3f a, FVector3f b) {
-	return FVector3f(FMath::Max(a.X, b.X), FMath::Max(a.Y, b.Y), FMath::Max(a.Z, b.Z));
-}
-static FVector3f CompWiseMin(FVector3f a, FVector3f b) {
-	return FVector3f(FMath::Min(a.X, b.X), FMath::Min(a.Y, b.Y), FMath::Min(a.Z, b.Z));
-}
-static FVector2f CompWiseAbs(FVector2f in) {
-	return FVector2f(FMath::Abs(in.X), FMath::Abs(in.Y));
-}
-static FVector2f CompWiseMax(FVector2f a, FVector2f b) {
-	return FVector2f(FMath::Max(a.X, b.X), FMath::Max(a.Y, b.Y));
-}
-static FVector2f CompWiseMin(FVector2f a, FVector2f b) {
-	return FVector2f(FMath::Min(a.X, b.X), FMath::Min(a.Y, b.Y));
-}
+
 FVector3f UGFN_R_BasePrimitive::GetPosition()
 {
 	if (PositionInput->Connection != nullptr) {
@@ -71,14 +54,17 @@ UGFN_E_Base* UGFN_R_PrimitiveSphere::CreateEditorNode(UEdGraph* _workingGraph, T
 	//PositionInput
 	UEdGraphPin* positionUiPin = InitUiPin(newNode, PositionInput, connections, idToPinMap);
 	newNode->PositionInput = positionUiPin;
+	newNode->position = position;
 	SetVectorDefaultValue(positionUiPin, position);
 	//RotationInput
 	UEdGraphPin* rotationUiPin = InitUiPin(newNode, RotationInput, connections, idToPinMap);
 	newNode->RotationInput = rotationUiPin;
+	newNode->rotation = rotation;
 	SetVectorDefaultValue(rotationUiPin, rotation);
 	//radiusinput
 	UEdGraphPin* RadiusUiPin = InitUiPin(newNode, RadiusInput, connections, idToPinMap);
 	newNode->RadiusInput = RadiusUiPin;
+	newNode->radius = radius;
 	SetFloatDefaultValue(RadiusUiPin, radius);
 	//output
 	UEdGraphPin* OutputUiPin = InitUiPin(newNode, Output, connections, idToPinMap);
@@ -157,14 +143,17 @@ UGFN_E_Base* UGFN_R_PrimitiveCube::CreateEditorNode(UEdGraph* _workingGraph, TAr
 	//PositionInput
 	UEdGraphPin* positionUiPin = InitUiPin(newNode, PositionInput, connections, idToPinMap);
 	newNode->PositionInput = positionUiPin;
+	newNode->position = position;
 	SetVectorDefaultValue(positionUiPin, position);
 	//RotationInput
 	UEdGraphPin* rotationUiPin = InitUiPin(newNode, RotationInput, connections, idToPinMap);
 	newNode->RotationInput = rotationUiPin;
+	newNode->rotation = rotation;
 	SetVectorDefaultValue(rotationUiPin, rotation);
 	//radiusinput
 	UEdGraphPin* RadiusUiPin = InitUiPin(newNode, RadiusInput, connections, idToPinMap);
 	newNode->RadiusInput = RadiusUiPin;
+	newNode->radius = radius;
 	SetFloatDefaultValue(RadiusUiPin, radius);
 	//output
 	UEdGraphPin* OutputUiPin = InitUiPin(newNode, Output, connections, idToPinMap);
@@ -239,14 +228,17 @@ UGFN_E_Base* UGFN_R_PrimitiveBox::CreateEditorNode(UEdGraph* _workingGraph, TArr
 	//PositionInput
 	UEdGraphPin* positionUiPin = InitUiPin(newNode, PositionInput, connections, idToPinMap);
 	newNode->PositionInput = positionUiPin;
+	newNode->position = position;
 	SetVectorDefaultValue(positionUiPin, position);
 	//RotationInput
 	UEdGraphPin* rotationUiPin = InitUiPin(newNode, RotationInput, connections, idToPinMap);
 	newNode->RotationInput = rotationUiPin;
+	newNode->rotation = rotation;
 	SetVectorDefaultValue(rotationUiPin, rotation);
 	//radiusinput
 	UEdGraphPin* RadiusUiPin = InitUiPin(newNode, RadiusInput, connections, idToPinMap);
 	newNode->RadiusInput = RadiusUiPin;
+	newNode->radius = radius;
 	SetVectorDefaultValue(RadiusUiPin, radius);
 	//output
 	UEdGraphPin* OutputUiPin = InitUiPin(newNode, Output, connections, idToPinMap);
@@ -320,15 +312,17 @@ UGFN_E_Base* UGFN_R_PrimitiveEllipsoid::CreateEditorNode(UEdGraph* _workingGraph
 	//PositionInput
 	UEdGraphPin* positionUiPin = InitUiPin(newNode, PositionInput, connections, idToPinMap);
 	newNode->PositionInput = positionUiPin;
+	newNode->position = position;
 	SetVectorDefaultValue(positionUiPin, position);
 	//RotationInput
 	UEdGraphPin* rotationUiPin = InitUiPin(newNode, RotationInput, connections, idToPinMap);
 	newNode->RotationInput = rotationUiPin;
+	newNode->rotation = rotation;
 	SetVectorDefaultValue(rotationUiPin, rotation);
 	//radiusinput
 	UEdGraphPin* RadiusUiPin = InitUiPin(newNode, RadiusInput, connections, idToPinMap);
-	
 	newNode->RadiusInput = RadiusUiPin;
+	newNode->radius = radius;
 	SetVectorDefaultValue(RadiusUiPin, radius);
 	//output
 	UEdGraphPin* OutputUiPin = InitUiPin(newNode, Output, connections, idToPinMap);
@@ -410,18 +404,22 @@ UGFN_E_Base* UGFN_R_PrimitiveCone::CreateEditorNode(UEdGraph* _workingGraph, TAr
 	//PositionInput
 	UEdGraphPin* positionUiPin = InitUiPin(newNode, PositionInput, connections, idToPinMap);
 	newNode->PositionInput = positionUiPin;
+	newNode->position = position;
 	SetVectorDefaultValue(positionUiPin, position);
 	//RotationInput
 	UEdGraphPin* rotationUiPin = InitUiPin(newNode, RotationInput, connections, idToPinMap);
 	newNode->RotationInput = rotationUiPin;
+	newNode->rotation = rotation;
 	SetVectorDefaultValue(rotationUiPin, rotation);
 	//angleinput
 	UEdGraphPin* AngleUIPin = InitUiPin(newNode, AngleInput, connections, idToPinMap);
 	newNode->AngleInput = AngleUIPin;
+	newNode->angle = angle;
 	SetFloatDefaultValue(AngleUIPin, angle);
 	//Heightinput
 	UEdGraphPin* HeightUIPin = InitUiPin(newNode, HeightInput, connections, idToPinMap);
 	newNode->HeightInput = HeightUIPin;
+	newNode->height = height;
 	SetFloatDefaultValue(HeightUIPin, height);
 	//output
 	UEdGraphPin* OutputUiPin = InitUiPin(newNode, Output, connections, idToPinMap);
@@ -521,18 +519,22 @@ UGFN_E_Base* UGFN_R_PrimitiveCylinder::CreateEditorNode(UEdGraph* _workingGraph,
 	//PositionInput
 	UEdGraphPin* positionUiPin = InitUiPin(newNode, PositionInput, connections, idToPinMap);
 	newNode->PositionInput = positionUiPin;
+	newNode->position = position;
 	SetVectorDefaultValue(positionUiPin, position);
 	//RotationInput
 	UEdGraphPin* rotationUiPin = InitUiPin(newNode, RotationInput, connections, idToPinMap);
 	newNode->RotationInput = rotationUiPin;
+	newNode->rotation = rotation;
 	SetVectorDefaultValue(rotationUiPin, rotation);
 	//radiusinput
 	UEdGraphPin* RadiusUIPin = InitUiPin(newNode, RadiusInput, connections, idToPinMap);
 	newNode->RadiusInput = RadiusUIPin;
+	newNode->radius = radius;
 	SetFloatDefaultValue(RadiusUIPin, radius);
 	//Heightinput
 	UEdGraphPin* HeightUIPin = InitUiPin(newNode, HeightInput, connections, idToPinMap);
 	newNode->HeightInput = HeightUIPin;
+	newNode->height = height;
 	SetFloatDefaultValue(HeightUIPin, height);
 	//output
 	UEdGraphPin* OutputUiPin = InitUiPin(newNode, Output, connections, idToPinMap);

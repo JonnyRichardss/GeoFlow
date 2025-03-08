@@ -77,13 +77,13 @@ TSharedRef<SWidget> GeoFlowPropertiesTabFactory::CreateTabBody(const FWorkflowTa
 	app->SetSelectedNodeDetailView(nodeDetailsView);
 	return SNew(SVerticalBox)
 		+ SVerticalBox::Slot()
-		.FillHeight(0.5f)
+		.FillHeight(0.3f)
 		.HAlign(HAlign_Fill)
 		[
 			graphDetailsView.ToSharedRef()
 		]
 		+ SVerticalBox::Slot()
-		.FillHeight(0.25f)
+		.FillHeight(0.5f)
 		.HAlign(HAlign_Fill)
 		[
 			nodeDetailsView.ToSharedRef()
