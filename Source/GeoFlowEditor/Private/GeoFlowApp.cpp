@@ -46,7 +46,9 @@ void GeoFlowEditorApp::InitEditor(const EToolkitMode::Type mode, const TSharedPt
 
 	UpdateEditorGraphFromWorkingAsset();
 	_graphChangeListenerHandle = _workingGraph->AddOnGraphChangedHandler(FOnGraphChanged::FDelegate::CreateSP(this,&GeoFlowEditorApp::OnGraphChanged));
-	GenerateDelegate = FOnClicked::CreateSP(this, &GeoFlowEditorApp::OnGenerateClicked);
+
+	if (!ViewportWidget) ViewportWidget = SNew(SGeoFlowEditorViewport);
+
 	FCoreDelegates::OnPreExit.AddLambda([this]()
 		{
 			if (!ViewportWidget.IsValid())
@@ -87,6 +89,12 @@ void GeoFlowEditorApp::OnGraphSelectionChanged(const FGraphPanelSelectionSet& se
 FReply GeoFlowEditorApp::OnGenerateClicked()
 {
 	ViewportClient->Generate();
+	return FReply::Handled();
+}
+
+FReply GeoFlowEditorApp::OnClearClicked()
+{
+	ViewportClient->Clear();
 	return FReply::Handled();
 }
 

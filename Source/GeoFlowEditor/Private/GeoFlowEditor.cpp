@@ -6,9 +6,11 @@
 #include "AssetToolsModule.h"
 #include "Styling/SlateStyleRegistry.h"
 #include "Interfaces/IPluginManager.h"
-
+#include "UnrealEd.h"
 #include "GeoFlowNode.h"
 #include "GeoFlowPin.h"
+
+
 
 #define LOCTEXT_NAMESPACE "FGeoFlowEditorModule"
 
@@ -55,6 +57,7 @@ void FGeoFlowEditorModule::ShutdownModule()
 	FSlateStyleRegistry::UnRegisterSlateStyle(*_styleSet);
 	FEdGraphUtilities::UnregisterVisualPinFactory(_pinFactory);
 	FEdGraphUtilities::UnregisterVisualNodeFactory(_nodeFactory);
+	
 }
 
 #undef LOCTEXT_NAMESPACE

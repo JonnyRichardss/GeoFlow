@@ -16,7 +16,7 @@ public:
 	void SetSelectedNodeDetailView(TSharedPtr<class IDetailsView> detailsView);
 	void OnGraphSelectionChanged(const FGraphPanelSelectionSet& selection);
 	FReply OnGenerateClicked();
-	FOnClicked GenerateDelegate;
+	FReply OnClearClicked();
 public: //FAssetEditorToolkit interface
 	virtual FName GetToolkitFName() const override { return FName(TEXT("GeoFlowEditorApp")); }
 	virtual FText GetBaseToolkitName() const override { return FText::FromString(TEXT("GeoFlowEditorApp")); }

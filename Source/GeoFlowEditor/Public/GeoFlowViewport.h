@@ -3,6 +3,7 @@
 #include "SEditorViewport.h"
 #include "Editor/AdvancedPreviewScene/Public/AdvancedPreviewScene.h"
 #include "GeoFlowComponent.h"
+
 class SGeoFlowEditorViewport : public SEditorViewport, public FGCObject, public ICommonEditorViewportToolbarInfoProvider
 {
 public:
@@ -30,6 +31,7 @@ public:
 	TSharedPtr<class FGeoFlowViewportClient> GetViewportClient() { return ViewportClient; }
 
 	TSharedPtr<class FGeoFlowViewportClient> ViewportClient;
+
 protected:
 	FText GetTitleText() const { return FText::FromString(TEXT("GeoFlow Preview")); }
 
@@ -49,10 +51,15 @@ public:
 
 	UPROPERTY()
 	TArray<UPrimitiveComponent*> ActorComponents;
-
+	UPROPERTY()
 	virtual void Tick(float DeltaSeconds) override;
 
 	void SetAsset(UGeoFlowAsset* InAsset);
 
 	void Generate();
+	void Clear();
+
+	//
+	//MakeDebug(type??)
+	//DestroyDebug(ref)
 };

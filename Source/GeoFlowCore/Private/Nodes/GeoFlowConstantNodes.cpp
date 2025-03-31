@@ -31,6 +31,20 @@ UGFN_R_Base* UGFN_E_ConstantVector::CreateRuntimeNode(UGeoFlowRuntimeGraph* runt
 	runtimeNode->Value = Value;
 	return runtimeNode;
 }
+
+void UGFN_E_ConstantVector::DrawInViewport(UWorld* InWorld)
+{
+	if (!ShowInViewport) return;
+	float size = 10;
+	//UE_LOG(LogTemp, Error, TEXT("DRAW DRAW DRAW"));
+	FVector pos = FVector(Value);
+	for (const FVector& c : {FVector::LeftVector, FVector::RightVector, FVector::ForwardVector, FVector::BackwardVector}) {
+		DrawDebugLine(InWorld, pos + (FVector::UpVector * size), pos + (c * size), FColor::Red);
+		DrawDebugLine(InWorld, pos + (FVector::DownVector * size), pos + (c * size), FColor::Red);
+	}
+	DrawDebugPoint(InWorld,pos,  5, FColor::Red);
+}
+
 UGFN_R_Base* UGFN_E_ConstantArray::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UGeoFlowRuntimePin*>& idToPinMap)
 {
 	UGFN_R_ConstantArray* runtimeNode = InitRuntimeNode<UGFN_R_ConstantArray>(runtimeGraph);

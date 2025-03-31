@@ -24,6 +24,3 @@ void SetBoolDefaultValue(UEdGraphPin* GraphPinObj, bool inBool);
 
 int GetIntDefaultValue(UEdGraphPin* GraphPinObj);
 void SetIntDefaultValue(UEdGraphPin* GraphPinObj, int inValue);
-
-
-//TODO Getters and setters for bool and int

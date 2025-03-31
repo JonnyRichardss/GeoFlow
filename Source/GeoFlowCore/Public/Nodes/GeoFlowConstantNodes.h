@@ -109,7 +109,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	double Value = 0.0;
 };
-UCLASS()
+UCLASS(ShowCategories = ("Viewport"))
 class GEOFLOWCORE_API UGFN_E_ConstantVector : public UGFN_E_BaseVector {
 	GENERATED_BODY()
 public:
@@ -141,6 +141,9 @@ public:
 	UEdGraphPin* ValuePin;
 	UPROPERTY(EditAnywhere)
 	FVector3f Value = FVector3f::ZeroVector;
+
+	virtual void DrawInViewport(UWorld* InWorld) override;
+	
 };
 UCLASS()
 class GEOFLOWCORE_API UGFN_E_ConstantArray : public UGFN_E_BaseArray {

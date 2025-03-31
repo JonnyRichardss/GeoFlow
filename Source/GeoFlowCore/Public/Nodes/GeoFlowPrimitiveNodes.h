@@ -4,7 +4,7 @@
 #include "GeoFlowNodeTypes.h"
 #include "GeoFlowPrimitiveNodes.generated.h"
 
-UCLASS()
+UCLASS(ShowCategories = ("Viewport"))
 class GEOFLOWCORE_API UGFN_E_BasePrimitive : public UGFN_E_BaseFloat {
 	GENERATED_BODY()
 public:
@@ -74,7 +74,7 @@ public:
 		}
 		Super::PostEditChangeProperty(PropertyChangedEvent);
 	}
-
+	virtual void DrawInViewport(UWorld* InWorld) override;
 	UEdGraphPin* RadiusInput = nullptr;
 	UPROPERTY(EditAnywhere,Category="Node Properties")
 	float radius;
@@ -116,7 +116,7 @@ public:
 		}
 		Super::PostEditChangeProperty(PropertyChangedEvent);
 	}
-
+	virtual void DrawInViewport(UWorld* InWorld) override;
 	UEdGraphPin* RadiusInput = nullptr;
 	UPROPERTY(EditAnywhere,Category="Node Properties")
 	float radius;
@@ -158,7 +158,7 @@ public:
 		}
 		Super::PostEditChangeProperty(PropertyChangedEvent);
 	}
-
+	virtual void DrawInViewport(UWorld* InWorld) override;
 	UEdGraphPin* RadiusInput = nullptr;
 	UPROPERTY(EditAnywhere,Category="Node Properties", DisplayName="Extents")
 	FVector3f radius;
@@ -200,6 +200,7 @@ public:
 		}
 		Super::PostEditChangeProperty(PropertyChangedEvent);
 	}
+	virtual void DrawInViewport(UWorld* InWorld) override;
 	UEdGraphPin* RadiusInput = nullptr;
 	UPROPERTY(EditAnywhere,Category="Node Properties", DisplayName="Extents")
 	FVector3f radius;
@@ -247,6 +248,7 @@ public:
 		}
 		Super::PostEditChangeProperty(PropertyChangedEvent);
 	}
+	virtual void DrawInViewport(UWorld* InWorld) override;
 	UEdGraphPin* AngleInput = nullptr;
 	UEdGraphPin* HeightInput = nullptr;
 	UPROPERTY(EditAnywhere,Category="Node Properties")
@@ -301,7 +303,7 @@ public:
 		}
 		Super::PostEditChangeProperty(PropertyChangedEvent);
 	}
-
+	virtual void DrawInViewport(UWorld* InWorld) override;
 	UEdGraphPin* RadiusInput = nullptr;
 	UEdGraphPin* HeightInput = nullptr;
 	UPROPERTY(EditAnywhere,Category="Node Properties")

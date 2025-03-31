@@ -11,8 +11,8 @@
 /**
  *
  */
-UCLASS(hidecategories = (LOD), meta = (BlueprintSpawnableComponent), ClassGroup = Rendering)
-class GEOFLOWRUNTIME_API UGeoFlowComponent : public UDynamicMeshComponent
+UCLASS(hidecategories = (LOD), meta = (BlueprintSpawnableComponent), ClassGroup = GeoFlow)
+class GEOFLOWCORE_API UGeoFlowComponent : public UDynamicMeshComponent
 {
 public:
 	GENERATED_BODY()
@@ -28,8 +28,10 @@ public:
 	//regenerate the mesh from the graph asset
 	UFUNCTION(BlueprintCallable,CallInEditor, Category = "GeoFlow")
 	void Regen();
-
 	//forces regeneration whether graph has been updated or not
 	UFUNCTION(BlueprintCallable)
 	void ForceRegen();
+	//forces geometry to clear
+	UFUNCTION(BlueprintCallable)
+	void ForceClear();
 };

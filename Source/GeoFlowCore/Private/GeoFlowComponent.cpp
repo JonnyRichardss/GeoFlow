@@ -40,3 +40,8 @@ void UGeoFlowComponent::ForceRegen()
 	}
 }
 
+void UGeoFlowComponent::ForceClear()
+{
+	MeshObject->Reset();
+}
+

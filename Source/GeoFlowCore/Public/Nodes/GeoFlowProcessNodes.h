@@ -136,7 +136,7 @@ public:
 	UGeoFlowRuntimePin* InputA = nullptr;
 	UPROPERTY()
 	UGeoFlowRuntimePin* InputB = nullptr;
-
+	
 	UPROPERTY()
 	float a;
 	UPROPERTY()

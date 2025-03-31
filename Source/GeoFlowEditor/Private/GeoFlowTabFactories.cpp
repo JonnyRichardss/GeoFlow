@@ -120,6 +120,10 @@ TSharedRef<SWidget> GeoFlowPreviewTabFactory::CreateTabBody(const FWorkflowTabSp
 		.FillHeight(0.05f)
 		.HAlign(HAlign_Fill)
 		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+			.FillWidth(0.5f)
+			.VAlign(VAlign_Fill)[
 			SNew(SButton)
 				.OnClicked_Lambda([this]()
 					{
@@ -135,7 +139,28 @@ TSharedRef<SWidget> GeoFlowPreviewTabFactory::CreateTabBody(const FWorkflowTabSp
 				.HAlign(HAlign_Fill)
 				.VAlign(VAlign_Fill)
 				.ContentScale(FVector2D(4.0))
+			]
+			+ SHorizontalBox::Slot()
+			.FillWidth(0.5f)
+			.VAlign(VAlign_Fill)[
+				SNew(SButton)
+					.OnClicked_Lambda([this]()
+						{
+							TSharedPtr<GeoFlowEditorApp> app = _app.Pin();
+							if (app.IsValid()) {
+								return app->OnClearClicked();
+							}
+							else {
+								return FReply::Unhandled();
+							}
+						})
+					.Text(FText::FromString(TEXT("Clear Preview")))
+					.HAlign(HAlign_Fill)
+					.VAlign(VAlign_Fill)
+					.ContentScale(FVector2D(4.0))
+			]
 		]
+
 		;
 }
 

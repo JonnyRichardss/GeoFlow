@@ -16,7 +16,7 @@ class UGeoFlowComponent;
 class UDynamicMeshComponent;
 class UGFN_R_Output;
 USTRUCT()
-struct GEOFLOWRUNTIME_API FGeoFlowGenerationSettings {
+struct GEOFLOWCORE_API FGeoFlowGenerationSettings {
 	GENERATED_BODY()
 	UPROPERTY(EditAnywhere,DisplayName="Resolution")
 	double stepSize = 5;
@@ -26,7 +26,7 @@ struct GEOFLOWRUNTIME_API FGeoFlowGenerationSettings {
 	bool ReuseVertices = true;
 };
 UCLASS(BlueprintType)
-class GEOFLOWRUNTIME_API UGeoFlowAsset : public UObject
+class GEOFLOWCORE_API UGeoFlowAsset : public UObject
 {
 	GENERATED_BODY()
 public:

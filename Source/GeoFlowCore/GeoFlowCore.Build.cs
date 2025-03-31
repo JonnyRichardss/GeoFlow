@@ -28,6 +28,8 @@ public class GeoFlowCore : ModuleRules
 				"Core",
                 "CoreUObject",
                 "Engine",
+                "GeometryFramework",
+                "GeometryCore",
                 "Slate",
                 "SlateCore",
                 "UnrealEd",
@@ -35,7 +37,8 @@ public class GeoFlowCore : ModuleRules
                 "PropertyEditor",
                 "Projects",
                 "ToolMenus",
-                "GraphEditor"
+                "GraphEditor",
+                "ComponentVisualizers" 
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

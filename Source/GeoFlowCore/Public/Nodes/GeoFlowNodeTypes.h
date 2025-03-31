@@ -10,7 +10,7 @@
 		Output node
 		All different possible return types	
 */
-
+class UGFN_E_Base;
 class UGFN_R_Base;
 class UGeoFlowRuntimeGraph;
 class UGeoFlowRuntimePin;
@@ -18,6 +18,7 @@ class UGeoFlowRuntimePin;
 	Editor
 */
 DECLARE_DELEGATE(FRegenGraph)
+
 USTRUCT()
 struct GEOFLOWCORE_API FGeoFlowTransform {
 	GENERATED_BODY()
@@ -28,7 +29,7 @@ struct GEOFLOWCORE_API FGeoFlowTransform {
 	FGeoFlowTransform() { position = FVector3f::ZeroVector; rotation = FVector3f::ZeroVector; }
 	FGeoFlowTransform(FVector3f Position,FVector3f Rotation) : position(Position),rotation(Rotation){}
 };
-UCLASS()
+UCLASS(HideCategories = ("Viewport"))
 class GEOFLOWCORE_API UGFN_E_Base : public UEdGraphNode
 {
 	GENERATED_BODY()
@@ -66,6 +67,12 @@ public:
 	T* InitRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph);
 
 	UEdGraphPin* Output = nullptr;
+
+
+
+	UPROPERTY(EditAnywhere, Category = "Viewport")
+	bool ShowInViewport = false;
+	virtual void DrawInViewport(UWorld* InWorld) {};
 };
 UCLASS()
 class GEOFLOWCORE_API UGFN_E_Output : public UGFN_E_Base {

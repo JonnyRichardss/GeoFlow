@@ -185,25 +185,25 @@ AddNodeArgs EnumToAddNodeArgs(EGeoFlowNodeType type)
 	case EGeoFlowNodeType::Smin:
 		return {
 			UGFN_E_Smin::StaticClass(),
-			TEXT("Process"),
+			TEXT("Boolean"),
 			TEXT("Smoothed Union")
 		};
 	case EGeoFlowNodeType::Smax:
 		return {
 			UGFN_E_Smax::StaticClass(),
-			TEXT("Process"),
+			TEXT("Boolean"),
 			TEXT("Smoothed Subtraction")
 		};
 	case EGeoFlowNodeType::Min:
 		return {
 			UGFN_E_Min::StaticClass(),
-			TEXT("Process"),
+			TEXT("Boolean"),
 			TEXT("Union")
 		};
 	case EGeoFlowNodeType::Max:
 		return {
 			UGFN_E_Max::StaticClass(),
-			TEXT("Process"),
+			TEXT("Boolean"),
 			TEXT("Subtraction")
 		};
 

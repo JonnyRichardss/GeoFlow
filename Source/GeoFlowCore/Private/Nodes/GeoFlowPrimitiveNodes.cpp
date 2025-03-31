@@ -26,6 +26,14 @@ TArray<UEdGraphPin*> UGFN_E_PrimitiveSphere::CreateInputPins(UEdGraphPin* fromPi
 	InputPins.Add(RadiusInput);
 	return InputPins;
 }
+void UGFN_E_PrimitiveSphere::DrawInViewport(UWorld* InWorld)
+{
+	if (!ShowInViewport) return;
+
+	//TODO check connection (oh no)
+	FVector pos = FVector(position);
+	DrawDebugSphere(InWorld, pos, radius,10, FColor::Red);
+}
 UGFN_R_Base* UGFN_E_PrimitiveSphere::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UGeoFlowRuntimePin*>& idToPinMap)
 {
 	UGFN_R_PrimitiveSphere* runtimeNode = InitRuntimeNode<UGFN_R_PrimitiveSphere>(runtimeGraph);
@@ -115,6 +123,15 @@ TArray<UEdGraphPin*> UGFN_E_PrimitiveCube::CreateInputPins(UEdGraphPin* fromPin)
 	InputPins.Add(RadiusInput);
 	return InputPins;
 }
+void UGFN_E_PrimitiveCube::DrawInViewport(UWorld* InWorld)
+{
+	if (!ShowInViewport) return;
+
+	//TODO check connection (oh no)
+	FVector pos = FVector(position);
+	FVector extent = FVector(radius, radius, radius);
+	DrawDebugBox(InWorld, pos, extent, FColor::Red);
+}
 UGFN_R_Base* UGFN_E_PrimitiveCube::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UGeoFlowRuntimePin*>& idToPinMap)
 {
 	UGFN_R_PrimitiveCube* runtimeNode = InitRuntimeNode<UGFN_R_PrimitiveCube>(runtimeGraph);
@@ -200,6 +217,15 @@ TArray<UEdGraphPin*> UGFN_E_PrimitiveBox::CreateInputPins(UEdGraphPin* fromPin)
 	InputPins.Add(RadiusInput);
 	return InputPins;
 }
+void UGFN_E_PrimitiveBox::DrawInViewport(UWorld* InWorld)
+{
+	if (!ShowInViewport) return;
+
+	//TODO check connection (oh no)
+	FVector pos = FVector(position);
+	FVector extent = FVector(radius);
+	DrawDebugBox(InWorld, pos, extent, FColor::Red);
+}
 UGFN_R_Base* UGFN_E_PrimitiveBox::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UGeoFlowRuntimePin*>& idToPinMap)
 {
 	UGFN_R_PrimitiveBox* runtimeNode = InitRuntimeNode<UGFN_R_PrimitiveBox>(runtimeGraph);
@@ -283,6 +309,31 @@ TArray<UEdGraphPin*> UGFN_E_PrimitiveEllipsoid::CreateInputPins(UEdGraphPin* fro
 	InputPins.Add(RotationInput);
 	InputPins.Add(RadiusInput);
 	return InputPins;
+}
+void UGFN_E_PrimitiveEllipsoid::DrawInViewport(UWorld* InWorld)
+{
+	if (!ShowInViewport) return;
+	//TODO rotation
+	//TODO clean this up
+	FVector pos = FVector(position);
+
+	FVector posX = FRotator::MakeFromEuler(FVector(-rotation)).RotateVector( FVector::UnitX() * radius.X) + pos;
+	FVector negX = FRotator::MakeFromEuler(FVector(-rotation)).RotateVector(-FVector::UnitX() * radius.X) + pos;
+	FVector posY = FRotator::MakeFromEuler(FVector(-rotation)).RotateVector( FVector::UnitY() * radius.Y) + pos;
+	FVector negY = FRotator::MakeFromEuler(FVector(-rotation)).RotateVector(-FVector::UnitY() * radius.Y) + pos;
+	FVector posZ = FRotator::MakeFromEuler(FVector(-rotation)).RotateVector( FVector::UnitZ() * radius.Z) + pos;
+	FVector negZ = FRotator::MakeFromEuler(FVector(-rotation)).RotateVector(-FVector::UnitZ() * radius.Z) + pos;
+	DrawDebugLine(InWorld, posX, negX, FColor::Red);
+	DrawDebugLine(InWorld, posY, negY, FColor::Red);
+	DrawDebugLine(InWorld, posZ, negZ, FColor::Red);
+	for (auto& pos2 : { posY,negY,posZ,negZ }) {
+		DrawDebugLine(InWorld, posX, pos2, FColor::Red);
+		DrawDebugLine(InWorld, negX, pos2, FColor::Red);
+	}
+	DrawDebugLine(InWorld, posY, posZ, FColor::Red);
+	DrawDebugLine(InWorld, posY, negZ, FColor::Red);
+	DrawDebugLine(InWorld, negY, posZ, FColor::Red);
+	DrawDebugLine(InWorld, negY, negZ, FColor::Red);
 }
 UGFN_R_Base* UGFN_E_PrimitiveEllipsoid::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UGeoFlowRuntimePin*>& idToPinMap)
 {
@@ -371,6 +422,18 @@ TArray<UEdGraphPin*> UGFN_E_PrimitiveCone::CreateInputPins(UEdGraphPin* fromPin)
 	InputPins.Add(AngleInput);
 	InputPins.Add(HeightInput);
 	return InputPins;
+}
+void UGFN_E_PrimitiveCone::DrawInViewport(UWorld* InWorld)
+{
+	if (!ShowInViewport) return;
+
+	//default direction is +y (where tip is pos and base is pos-height)
+	FVector pos = FVector(position);
+	
+	FVector dir = FRotator::MakeFromEuler(FVector(-rotation)).RotateVector(FVector::UnitY());
+	DrawDebugCone(InWorld, pos, -dir, height, FMath::DegreesToRadians(angle), FMath::DegreesToRadians(angle), 6, FColor::Red);
+	//DrawDebugPoint(InWorld, pos, 3, FColor::Green);
+	//DrawDebugLine(InWorld, pos, pos + FVector::UnitZ(), FColor::Orange);
 }
 UGFN_R_Base* UGFN_E_PrimitiveCone::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UGeoFlowRuntimePin*>& idToPinMap)
 {
@@ -486,6 +549,14 @@ TArray<UEdGraphPin*> UGFN_E_PrimitiveCylinder::CreateInputPins(UEdGraphPin* from
 	InputPins.Add(RadiusInput);
 	InputPins.Add(HeightInput);
 	return InputPins;
+}
+void UGFN_E_PrimitiveCylinder::DrawInViewport(UWorld* InWorld)
+{
+	if (!ShowInViewport) return;
+	//TODO
+	FVector pos = FVector(position);
+	FVector dir = FRotator::MakeFromEuler(FVector(rotation)).RotateVector(FVector::UnitY());
+	DrawDebugCylinder(InWorld, pos - dir * height, pos + dir * height, radius, 6, FColor::Red);
 }
 UGFN_R_Base* UGFN_E_PrimitiveCylinder::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UGeoFlowRuntimePin*>& idToPinMap)
 {

@@ -269,7 +269,7 @@ UGFN_R_Base* UGFN_E_Max::CreateRuntimeNode(UGeoFlowRuntimeGraph* runtimeGraph, T
 UGFN_E_Base* UGFN_R_Max::CreateEditorNode(UEdGraph* _workingGraph, TArray<std::pair<FGuid, FGuid>>& connections, TMap<FGuid, UEdGraphPin*>& idToPinMap)
 {
 	auto newNode = InitUiNode<UGFN_E_Max>(_workingGraph);
-
+	
 	//inputA
 	UEdGraphPin* UiPinA = InitUiPin(newNode, InputA, connections, idToPinMap);
 	newNode->InputA = UiPinA;

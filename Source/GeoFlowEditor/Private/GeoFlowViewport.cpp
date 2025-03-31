@@ -1,5 +1,6 @@
 #include "GeoFlowViewport.h"
-
+#include "Nodes/GeoFlowNodeTypes.h"
+#include "Selection.h"
 void SGeoFlowEditorViewport::Construct(const FArguments& InArgs)
 {
 	SEditorViewport::Construct(SEditorViewport::FArguments());
@@ -31,12 +32,13 @@ FGeoFlowViewportClient::FGeoFlowViewportClient(const TSharedRef<SGeoFlowEditorVi
 {
 	//TODO - make a custom preview scene and dont rely on the builtin one
 	AdvancedPreviewScene = static_cast<FAdvancedPreviewScene*>(PreviewScene);
-
+	UE_LOG(LogTemp, Error, TEXT("MADE PREVIEW SCENE"));
 	SetRealtime(true);
 	DrawHelper.bDrawGrid = true;
 	DrawHelper.bDrawPivot = false;
 	DrawHelper.AxesLineThickness = 5;
 	DrawHelper.PivotSize = 5;
+	
 	SetViewLocation(FVector(0, 1000, 0));
 	SetViewRotation(FVector(0, -180, 0).Rotation());
 
@@ -47,6 +49,7 @@ FGeoFlowViewportClient::FGeoFlowViewportClient(const TSharedRef<SGeoFlowEditorVi
 	SetViewModes(VMI_Lit, VMI_Lit);
 
 	GeoFlow = ViewportPtr.Pin()->GeoFlow;
+	GeoFlow->bSelectable = true;
 	AdvancedPreviewScene->SetFloorVisibility(false);
 	PreviewScene->AddComponent(GeoFlow,FTransform(),false);
 	ActorComponents.Add(GeoFlow);
@@ -55,6 +58,15 @@ void FGeoFlowViewportClient::Tick(float DeltaSeconds) {
 	FEditorViewportClient::Tick(DeltaSeconds);
 	if (AdvancedPreviewScene) {
 		AdvancedPreviewScene->GetWorld()->Tick(LEVELTICK_All, DeltaSeconds);
+	}
+
+	if (!IsValid(GeoFlow->geo)) return;
+	UEdGraph* graph = GeoFlow->geo->lastWorkingGraph;
+	if (!IsValid(graph)) return;
+	TArray<UGFN_E_Base*> nodes;
+	graph->GetNodesOfClass(nodes);
+	for (UGFN_E_Base* node : nodes) {
+		node->DrawInViewport(PreviewScene->GetWorld());
 	}
 }
 void FGeoFlowViewportClient::SetAsset(UGeoFlowAsset* InAsset)
@@ -67,3 +79,9 @@ void FGeoFlowViewportClient::Generate()
 {
 	GeoFlow->ForceRegen();
 }
+
+void FGeoFlowViewportClient::Clear()
+{
+	GeoFlow->ForceClear();
+}
+

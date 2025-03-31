@@ -20,8 +20,6 @@ void UGeoFlowGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& conte
 	for (int i = 0; i < (int)EGeoFlowNodeType::Output; i++) {
 		AddNewNodeAction(AllActions, EnumToAddNodeArgs((EGeoFlowNodeType)i));
 	}
-	//TODO maybe unmanualify this, it can probably be done by iterating over the enum
-	
 	for (auto action : AllActions) {
 		contextMenuBuilder.AddAction(action);
 	}
